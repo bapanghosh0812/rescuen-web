@@ -1,0 +1,6 @@
+{
+  "name": "RESCUEN",
+  "description": "An ultimate personal safety ecosystem featuring moving radar, silent SOS broadcast, remote access controls, and NLP AI safety assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
