@@ -1,0 +1,14 @@
+# Netlify config for the RESCUEN Next.js site.
+# The Next.js runtime plugin handles SSR, API routes and image optimization.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Ensures dev tooling (tailwind/postcss/typescript) installs during build.
+  NPM_FLAGS = "--include=dev"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
