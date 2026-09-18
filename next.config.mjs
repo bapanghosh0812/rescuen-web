@@ -4,12 +4,12 @@
 // Firebase Auth, invisible reCAPTCHA, Google Fonts and the Gemini API to work.
 const ContentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://apis.google.com https://*.googleapis.com https://*.firebaseio.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://*.googleapis.com https://*.firebaseio.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
-  "frame-src 'self' https://www.google.com https://*.firebaseapp.com https://*.web.app",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com https://generativelanguage.googleapis.com",
+  "frame-src 'self' https://www.google.com https://www.recaptcha.net https://*.firebaseapp.com https://*.web.app",
+  "connect-src 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com https://generativelanguage.googleapis.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
