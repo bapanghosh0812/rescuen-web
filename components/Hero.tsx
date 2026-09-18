@@ -2,18 +2,10 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
-import {
-  Smartphone,
-  ShieldCheck,
-  Star,
-  Radar as RadarIcon,
-  BellRing,
-  Sparkles,
-  ArrowRight,
-} from "lucide-react";
+import { Smartphone, ShieldCheck, Star, Sparkles, ArrowRight } from "lucide-react";
 import { SITE } from "@/lib/site";
-import PhoneMock from "@/components/PhoneMock";
 
 export default function Hero() {
   const frameRef = useRef<HTMLDivElement>(null);
@@ -25,7 +17,7 @@ export default function Hero() {
     const r = el.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width - 0.5;
     const py = (e.clientY - r.top) / r.height - 0.5;
-    setTilt({ rx: py * -10, ry: px * 12 });
+    setTilt({ rx: py * -6, ry: px * 8 });
   };
   const reset = () => setTilt({ rx: 0, ry: 0 });
 
@@ -117,24 +109,11 @@ export default function Hero() {
           </motion.div>
         </div>
 
-        {/* Right — 3D device */}
+        {/* Right — premium poster with 3D tilt */}
         <div className="perspective relative flex justify-center">
-          {/* Radar sweep behind phone */}
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <div className="relative h-[420px] w-[420px] max-w-full">
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="absolute inset-0 rounded-full border border-brand/15"
-                  style={{ transform: `scale(${0.5 + i * 0.25})` }}
-                />
-              ))}
-              <div className="absolute inset-0 rounded-full [mask-image:radial-gradient(circle,black,transparent_70%)]">
-                <div className="absolute left-1/2 top-1/2 h-1/2 w-1/2 origin-top-left animate-sweep bg-[conic-gradient(from_0deg,rgba(0,74,173,0.28),transparent_35%)]" />
-              </div>
-            </div>
+            <div className="h-[80%] w-[80%] rounded-full bg-brand-300/25 blur-3xl" />
           </div>
-
           <motion.div
             ref={frameRef}
             onMouseMove={onMove}
@@ -146,56 +125,16 @@ export default function Hero() {
               transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
               transformStyle: "preserve-3d",
             }}
-            className="preserve-3d relative z-10 transition-transform duration-200 ease-out will-change-transform"
+            className="preserve-3d relative z-10 overflow-hidden rounded-[1.6rem] border border-white/60 shadow-lift ring-1 ring-brand-900/5 transition-transform duration-200 ease-out will-change-transform"
           >
-            {/* Real app screen (Home) — replace with a screenshot via PhoneMock src */}
-            <PhoneMock screen="home" priority />
-
-            {/* Floating glass cards (3D layered) */}
-            <motion.div
-              style={{ transform: "translateZ(60px)" }}
-              className="animate-float absolute -left-10 top-16 w-44 rounded-2xl border border-line bg-white/90 p-3 shadow-card backdrop-blur"
-            >
-              <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-sos text-white">
-                  <BellRing className="h-4 w-4" />
-                </span>
-                <div className="leading-tight">
-                  <p className="text-[11px] font-bold text-ink">SOS dispatched</p>
-                  <p className="text-[10px] text-ink-faint">Family + police · silent</p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              style={{ transform: "translateZ(80px)" }}
-              className="animate-float-slow absolute -right-8 top-44 w-40 rounded-2xl border border-line bg-white/90 p-3 shadow-card backdrop-blur"
-            >
-              <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-safe-500 text-white">
-                  <RadarIcon className="h-4 w-4" />
-                </span>
-                <div className="leading-tight">
-                  <p className="text-[11px] font-bold text-ink">3 heroes near</p>
-                  <p className="text-[10px] text-ink-faint">Within 1 km radius</p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              style={{ transform: "translateZ(50px)" }}
-              className="animate-float absolute -bottom-6 left-6 w-48 rounded-2xl border border-line bg-white/90 p-3 shadow-card backdrop-blur [animation-delay:-3s]"
-            >
-              <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-white">
-                  <Sparkles className="h-4 w-4" />
-                </span>
-                <div className="leading-tight">
-                  <p className="text-[11px] font-bold text-ink">AI Companion</p>
-                  <p className="text-[10px] text-ink-faint">“You’re safe. Here’s what to do…”</p>
-                </div>
-              </div>
-            </motion.div>
+            <Image
+              src="/promo/promo-1.png"
+              alt="RESCUEN app — Home screen with one-tap SOS, live location and Follow-Me"
+              width={941}
+              height={1672}
+              priority
+              className="h-[68vh] max-h-[680px] w-auto"
+            />
           </motion.div>
         </div>
       </div>

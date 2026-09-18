@@ -116,10 +116,10 @@ export const FEATURES: Feature[] = [
     accent: "sos",
   },
   {
-    icon: "Cpu",
-    title: "Anti-Spam Mutex Lock",
-    desc: "Advanced mutex-locking means the app never hangs or crashes — even if you panic and press the button many times.",
-    accent: "ink",
+    icon: "HeartPulse",
+    title: "Wellness & Safety Hub",
+    desc: "A curated Health tab — women-safety tips, self-defense, yoga, fitness, healthy living and mental-health guides to stay safe, strong and calm.",
+    accent: "safe",
   },
   {
     icon: "BatteryCharging",
@@ -128,10 +128,10 @@ export const FEATURES: Feature[] = [
     accent: "ink",
   },
   {
-    icon: "MapPin",
-    title: "Pinpoint GPS Accuracy",
-    desc: "Real-time, high-accuracy location tracking using advanced local math algorithms.",
-    accent: "brand",
+    icon: "PhoneOutgoing",
+    title: "Fake Call Escape",
+    desc: "Trigger a realistic fake incoming call to slip out of an uncomfortable or unsafe moment — gracefully and instantly.",
+    accent: "sos",
   },
   {
     icon: "Languages",
