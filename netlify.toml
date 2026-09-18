@@ -9,6 +9,14 @@
   NODE_VERSION = "20"
   # Ensures dev tooling (tailwind/postcss/typescript) installs during build.
   NPM_FLAGS = "--include=dev"
+  # Netlify secrets-scanning: exclude values that are PUBLIC by design so they
+  # don't trip false positives. NEXT_PUBLIC_* ship in the browser bundle on
+  # purpose, and the support email/model/project-id are public info. The REAL
+  # secrets (GMAIL_APP_PASSWORD, GEMINI_API_KEY, FIREBASE_ADMIN_PRIVATE_KEY) are
+  # deliberately NOT listed here, so scanning still protects them.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_FIREBASE_API_KEY,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,NEXT_PUBLIC_FIREBASE_PROJECT_ID,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,NEXT_PUBLIC_FIREBASE_APP_ID,NEXT_PUBLIC_APP_STORE_URL,NEXT_PUBLIC_SUPPORT_EMAIL,GMAIL_USER,CONTACT_TO,GEMINI_MODEL,FIREBASE_ADMIN_PROJECT_ID"
+  # Don't scan the archived prototype or build caches.
+  SECRETS_SCAN_OMIT_PATHS = "legacy-vite/**,.next/cache/**"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
