@@ -416,8 +416,14 @@ function friendlyError(err: unknown): string {
     "auth/quota-exceeded": "SMS limit reached. Please try again later.",
     "auth/captcha-check-failed": "Verification failed. Please refresh and try again.",
     "auth/billing-not-enabled": "Phone sign-in needs to be enabled in Firebase.",
+    "auth/operation-not-allowed":
+      "SMS for your region isn’t enabled yet. (Enable it in Firebase → Authentication → Settings → SMS region policy.)",
+    "auth/admin-restricted-operation":
+      "Phone sign-in is restricted. Please enable it in Firebase Authentication settings.",
   };
   if (map[code]) return map[code];
-  const msg = (err as { message?: string })?.message;
+  const msg = (err as { message?: string })?.message || "";
+  if (/region/i.test(msg))
+    return "SMS for your region isn’t enabled yet. Enable it in Firebase → Authentication → Settings → SMS region policy.";
   return msg && !msg.includes("Firebase") ? msg : "Something went wrong. Please try again.";
 }
