@@ -79,6 +79,7 @@ module.exports = {
         lift: "0 30px 60px -24px rgba(10,37,64,0.30)",
         glow: "0 0 0 1px rgba(0,74,173,0.12), 0 20px 50px -20px rgba(0,74,173,0.40)",
         sos: "0 0 0 1px rgba(231,76,60,0.14), 0 18px 44px -18px rgba(231,76,60,0.5)",
+        gold: "0 0 0 1px rgba(230,176,47,0.18), 0 16px 40px -16px rgba(230,176,47,0.55)",
         inset: "inset 0 1px 0 rgba(255,255,255,0.65)",
       },
       borderRadius: {

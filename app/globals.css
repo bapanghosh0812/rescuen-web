@@ -89,6 +89,14 @@
     filter: brightness(1.06);
     transform: translateY(-2px);
   }
+  .btn-gold {
+    @apply btn text-ink shadow-gold;
+    background-image: linear-gradient(135deg, #f0c65a 0%, #e6b02f 55%, #b07c17 100%);
+  }
+  .btn-gold:hover {
+    filter: brightness(1.06);
+    transform: translateY(-2px);
+  }
   .btn-dark {
     @apply btn bg-ink text-white shadow-card hover:-translate-y-0.5;
   }
