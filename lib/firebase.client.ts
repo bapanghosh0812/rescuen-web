@@ -18,6 +18,11 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 
+// Firebase *web* config — read only from build-time env (NEXT_PUBLIC_*).
+// The web config is public by design (it ships in the browser), but we keep it
+// OUT of source so it never lands in the repo. Set these in .env.local (local)
+// and in your Netlify Environment variables (live). Real secrets — Gmail
+// password, Gemini key, Admin key — are server-only and never in the client.
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
