@@ -32,7 +32,7 @@ cp .env.local.example .env.local   # PowerShell: Copy-Item .env.local.example .e
 npm run dev
 ```
 
-Open http://localhost:3000
+Open https://rescuen-web.netlify.app/  or https://rescuen-web.vercel.app/
 
 ### Without keys?
 The site runs fine for previewing. Login uses **demo mode** (OTP code `123456`), the contact
