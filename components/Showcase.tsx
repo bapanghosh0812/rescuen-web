@@ -48,7 +48,9 @@ export default function Showcase() {
                   alt={p.alt}
                   width={941}
                   height={1672}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  loading="lazy"
+                  quality={75}
+                  sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 360px"
                   className="h-auto w-full transition-transform duration-500 group-hover:scale-[1.03]"
                 />
               </div>

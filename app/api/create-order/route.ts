@@ -19,13 +19,16 @@ export async function POST(req: Request) {
 
   const key_id = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const key_secret = process.env.RAZORPAY_KEY_SECRET;
-
-  if (!key_id || !key_secret) {
-    return NextResponse.json(
-      { ok: false, error: "Razorpay authentication credentials are not configured." },
-      { status: 401 }
-    );
-  }
+  const upiId =
+    process.env.RESCUEN_UPI_ID ||
+    process.env.NEXT_PUBLIC_UPI_ID ||
+    "bapanghosh081204@oksbi";
+  const razorpayMeUrl =
+    process.env.NEXT_PUBLIC_RAZORPAY_ME_URL || "https://razorpay.me/@bapanghosh8243";
+  const buttonId =
+    process.env.NEXT_PUBLIC_RAZORPAY_BUTTON_ID ||
+    process.env.RAZORPAY_BUTTON_ID ||
+    "pl_TwH4uDkTG3WePT";
 
   let body: Record<string, unknown>;
   try {
@@ -64,6 +67,29 @@ export async function POST(req: Request) {
       ? body.email.trim()
       : "supporter@rescuen.app";
 
+  const orderToken = signOrderToken({
+    orderRef: receipt,
+    amount: Math.round(rawAmountPaise / 100),
+    email,
+    name,
+    exp: Date.now() + 20 * 60 * 1000,
+  });
+
+  if (!key_id || !key_secret) {
+    return NextResponse.json({
+      ok: true,
+      mode: "live_direct",
+      amount: rawAmountPaise,
+      amountInr: Math.round(rawAmountPaise / 100),
+      currency,
+      receipt,
+      orderToken,
+      upiId,
+      razorpayMeUrl,
+      buttonId,
+    });
+  }
+
   try {
     const razorpay = new Razorpay({ key_id, key_secret });
     const order = await razorpay.orders.create({
@@ -77,6 +103,17 @@ export async function POST(req: Request) {
       },
     });
 
+    const upiId =
+      process.env.RESCUEN_UPI_ID ||
+      process.env.NEXT_PUBLIC_UPI_ID ||
+      "bapanghosh081204@oksbi";
+    const razorpayMeUrl =
+      process.env.NEXT_PUBLIC_RAZORPAY_ME_URL || "https://razorpay.me/@bapanghosh8243";
+    const buttonId =
+      process.env.NEXT_PUBLIC_RAZORPAY_BUTTON_ID ||
+      process.env.RAZORPAY_BUTTON_ID ||
+      "pl_TwH4uDkTG3WePT";
+
     const orderToken = signOrderToken({
       orderRef: receipt,
       amount: Math.round(rawAmountPaise / 100),
@@ -87,31 +124,50 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
+      mode: "razorpay",
       order_id: order.id,
       amount: order.amount,
       currency: order.currency,
       receipt: order.receipt,
       key_id,
       orderToken,
+      upiId,
+      razorpayMeUrl,
+      buttonId,
     });
   } catch (err: unknown) {
-    console.error("[api/create-order] Razorpay SDK error:", err);
-    const statusCode =
-      typeof err === "object" && err !== null && "statusCode" in err
-        ? Number((err as { statusCode?: number }).statusCode)
-        : 500;
+    console.warn("[api/create-order] Razorpay SDK fallback to live handle:", err);
+    const upiId =
+      process.env.RESCUEN_UPI_ID ||
+      process.env.NEXT_PUBLIC_UPI_ID ||
+      "bapanghosh081204@oksbi";
+    const razorpayMeUrl =
+      process.env.NEXT_PUBLIC_RAZORPAY_ME_URL || "https://razorpay.me/@bapanghosh8243";
+    const buttonId =
+      process.env.NEXT_PUBLIC_RAZORPAY_BUTTON_ID ||
+      process.env.RAZORPAY_BUTTON_ID ||
+      "pl_TwH4uDkTG3WePT";
 
-    if (statusCode === 401) {
-      return NextResponse.json(
-        { ok: false, error: "Razorpay authentication failed. Check API keys." },
-        { status: 401 }
-      );
-    }
+    const orderToken = signOrderToken({
+      orderRef: receipt,
+      amount: Math.round(rawAmountPaise / 100),
+      email,
+      name,
+      exp: Date.now() + 20 * 60 * 1000,
+    });
 
-    return NextResponse.json(
-      { ok: false, error: "Failed to create Razorpay order." },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      ok: true,
+      mode: "live_direct",
+      amount: rawAmountPaise,
+      amountInr: Math.round(rawAmountPaise / 100),
+      currency,
+      receipt,
+      orderToken,
+      upiId,
+      razorpayMeUrl,
+      buttonId,
+    });
   }
 }
 

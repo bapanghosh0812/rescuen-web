@@ -26,55 +26,35 @@ export default function Hero() {
       {/* Decorative background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-dotgrid opacity-60 mask-fade-b" />
-        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand-200/45 blur-3xl animate-aurora" />
-        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-safe-200/40 blur-3xl animate-aurora [animation-delay:-6s]" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-brand-100/60 blur-3xl animate-aurora [animation-delay:-10s]" />
+        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand-200/35 blur-2xl" />
+        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-safe-200/30 blur-2xl" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-brand-100/40 blur-2xl" />
       </div>
 
       <div className="container-x grid items-center gap-12 lg:grid-cols-2">
         {/* Left copy */}
         <div>
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="chip"
-          >
+          <div className="chip">
             <span className="relative flex h-2.5 w-2.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sos opacity-70" />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sos" />
             </span>
             Community-driven safety · Live on Google Play
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.05 }}
-            className="h-display mt-5 text-balance text-4xl leading-[1.05] sm:text-5xl lg:text-6xl"
-          >
+          <h1 className="h-display mt-5 text-balance text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
             Your 24×7 personal
             <br />
             safety <span className="text-gradient-brand">bodyguard.</span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.12 }}
-            className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft"
-          >
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
             One <b>2-second hold</b> turns your phone into an emergency broadcaster — a live{" "}
             <b>1&nbsp;KM rescue radar</b>, silent SMS to family &amp; police, community{" "}
             <b>Hero Mode</b>, and a multilingual <b>AI safety assistant</b>.
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.18 }}
-            className="mt-8 flex flex-wrap items-center gap-3"
-          >
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <a href={SITE.appStoreUrl} target="_blank" rel="noreferrer" className="btn-primary text-base">
               <Smartphone className="h-5 w-5" />
               Download on Android
@@ -83,15 +63,10 @@ export default function Hero() {
               Explore Features
               <ArrowRight className="h-4 w-4" />
             </Link>
-          </motion.div>
+          </div>
 
           {/* Trust row */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-ink-faint"
-          >
+          <div className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-ink-faint">
             <span className="inline-flex items-center gap-1.5">
               <span className="flex text-gold">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -106,7 +81,7 @@ export default function Hero() {
             <span className="inline-flex items-center gap-1.5">
               <Sparkles className="h-4 w-4 text-brand" /> No password — phone + OTP
             </span>
-          </motion.div>
+          </div>
         </div>
 
         {/* Right — premium poster with 3D tilt */}
@@ -133,6 +108,8 @@ export default function Hero() {
               width={941}
               height={1672}
               priority
+              quality={80}
+              sizes="(max-width: 640px) 280px, (max-width: 1024px) 340px, 380px"
               className="h-[68vh] max-h-[680px] w-auto"
             />
           </motion.div>

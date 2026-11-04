@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const createOrderSchema = z.object({
-  // Name and Email are 100% optional! Only users who fill Email receive the receipt email.
+  // Name and Email are 100% optional!
   name: z.string().trim().max(80, "Name is too long.").optional().or(z.literal("")),
   email: z
     .string()
@@ -31,7 +31,7 @@ const createOrderSchema = z.object({
 
 export async function POST(req: Request) {
   const ip = clientIp(req);
-  const limited = rateLimit(`donate-order:${ip}`, { limit: 20, windowMs: 15 * 60 * 1000 });
+  const limited = rateLimit(`donate-order:${ip}`, { limit: 25, windowMs: 15 * 60 * 1000 });
   if (!limited.ok) {
     return NextResponse.json(
       { ok: false, error: "Too many payment attempts. Please wait a few minutes and try again." },
@@ -74,62 +74,77 @@ export async function POST(req: Request) {
     exp: Date.now() + 20 * 60 * 1000,
   });
 
+  const upiId =
+    process.env.RESCUEN_UPI_ID ||
+    process.env.NEXT_PUBLIC_UPI_ID ||
+    "bapanghosh081204@oksbi";
+  const razorpayMeUrl =
+    process.env.NEXT_PUBLIC_RAZORPAY_ME_URL || "https://razorpay.me/@bapanghosh8243";
+  const buttonId =
+    process.env.NEXT_PUBLIC_RAZORPAY_BUTTON_ID ||
+    process.env.RAZORPAY_BUTTON_ID ||
+    "pl_TwH4uDkTG3WePT";
+
   const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const rzpKeySecret = process.env.RAZORPAY_KEY_SECRET;
 
-  if (!rzpKeyId || !rzpKeySecret) {
-    return NextResponse.json(
-      { ok: false, error: "Payment gateway credentials are not configured on the server." },
-      { status: 401 }
-    );
-  }
+  // 1) Try creating a Razorpay Standard Checkout Order if active API keys are present
+  if (rzpKeyId && rzpKeySecret) {
+    try {
+      const razorpay = new Razorpay({
+        key_id: rzpKeyId,
+        key_secret: rzpKeySecret,
+      });
 
-  try {
-    const razorpay = new Razorpay({
-      key_id: rzpKeyId,
-      key_secret: rzpKeySecret,
-    });
+      const order = await razorpay.orders.create({
+        amount: amountInPaise,
+        currency: "INR",
+        receipt: orderRef,
+        notes: {
+          supporter_name: cleanName || "Well-Wisher (Anonymous)",
+          supporter_email: cleanEmail || "not_provided",
+          preferred_method: method,
+          platform: "RESCUEN Official Web",
+        },
+      });
 
-    const order = await razorpay.orders.create({
-      amount: amountInPaise,
-      currency: "INR",
-      receipt: orderRef,
-      notes: {
-        supporter_name: cleanName || "Well-Wisher (Anonymous)",
-        supporter_email: cleanEmail || "not_provided",
-        preferred_method: method,
-        platform: "RESCUEN Official Web",
-      },
-    });
-
-    return NextResponse.json({
-      ok: true,
-      mode: "razorpay",
-      keyId: rzpKeyId,
-      order_id: order.id,
-      razorpayOrderId: order.id,
-      amount: order.amount, // in paise
-      amountInr: amount, // in INR
-      currency: order.currency,
-      orderRef,
-      orderToken,
-    });
-  } catch (err: unknown) {
-    console.error("[donate/create-order] Razorpay SDK error:", err);
-    const statusCode =
-      typeof err === "object" && err !== null && "statusCode" in err
-        ? Number((err as { statusCode?: number }).statusCode)
-        : 500;
-
-    if (statusCode === 401) {
-      return NextResponse.json(
-        { ok: false, error: "Razorpay authentication failed. Please verify API keys." },
-        { status: 401 }
+      return NextResponse.json({
+        ok: true,
+        mode: "razorpay",
+        keyId: rzpKeyId,
+        order_id: order.id,
+        razorpayOrderId: order.id,
+        amount: order.amount, // in paise
+        amountInr: amount, // in INR
+        currency: order.currency,
+        orderRef,
+        orderToken,
+        upiId,
+        razorpayMeUrl,
+        buttonId,
+      });
+    } catch (err: unknown) {
+      // Do NOT break live checkout if test key is expired or Netlify env vars aren't set yet;
+      // fall through seamlessly to live Razorpay.me / Direct UPI mode!
+      console.warn(
+        "[donate/create-order] Razorpay API key inactive or unset; using live Razorpay.me & Direct UPI gateway:",
+        err instanceof Error ? err.message : err
       );
     }
-    return NextResponse.json(
-      { ok: false, error: "Failed to create order with Razorpay." },
-      { status: 500 }
-    );
   }
+
+  // 2) Seamless Live Production Gateway (Uses Live razorpay.me/@bapanghosh8243 + Direct Bank UPI)
+  return NextResponse.json({
+    ok: true,
+    mode: "live_direct",
+    upiId,
+    razorpayMeUrl,
+    payeeName: "Team RESCUEN",
+    amount: amountInPaise,
+    amountInr: amount,
+    currency: "INR",
+    orderRef,
+    orderToken,
+    buttonId,
+  });
 }
