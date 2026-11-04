@@ -9,16 +9,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const createOrderSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Please enter your name (at least 2 characters).")
-    .max(80, "Name is too long."),
+  // Name and Email are 100% optional! Only users who fill Email receive the receipt email.
+  name: z.string().trim().max(80, "Name is too long.").optional().or(z.literal("")),
   email: z
     .string()
     .trim()
-    .email("Please enter a valid email address for your receipt.")
-    .max(120, "Email is too long."),
+    .email("Please enter a valid email address or leave it blank.")
+    .max(120, "Email is too long.")
+    .optional()
+    .or(z.literal("")),
   amount: z
     .number()
     .int("Amount must be a whole rupee amount.")
@@ -32,7 +31,7 @@ const createOrderSchema = z.object({
 
 export async function POST(req: Request) {
   const ip = clientIp(req);
-  const limited = rateLimit(`donate-order:${ip}`, { limit: 15, windowMs: 15 * 60 * 1000 });
+  const limited = rateLimit(`donate-order:${ip}`, { limit: 20, windowMs: 15 * 60 * 1000 });
   if (!limited.ok) {
     return NextResponse.json(
       { ok: false, error: "Too many payment attempts. Please wait a few minutes and try again." },
@@ -60,7 +59,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Request blocked." }, { status: 400 });
   }
 
-  const { name, email, amount, method } = parsed.data;
+  const cleanName = parsed.data.name ? parsed.data.name.trim() : "";
+  const cleanEmail = parsed.data.email ? parsed.data.email.trim() : "";
+  const { amount, method } = parsed.data;
   const amountInPaise = amount * 100; // Minimum 100 paise (₹1)
   const orderRef = `ORD_${Date.now()}_${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
@@ -68,82 +69,67 @@ export async function POST(req: Request) {
   const orderToken = signOrderToken({
     orderRef,
     amount,
-    email,
-    name,
+    email: cleanEmail,
+    name: cleanName || "Well-Wisher",
     exp: Date.now() + 20 * 60 * 1000,
   });
-
-  const upiId =
-    process.env.RESCUEN_UPI_ID ||
-    process.env.NEXT_PUBLIC_UPI_ID ||
-    "bapanghosh081204@oksbi";
 
   const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const rzpKeySecret = process.env.RAZORPAY_KEY_SECRET;
 
-  // Use Official Razorpay Node.js SDK to create order for 1-click checkout (UPI, QR, Card, Wallet, NetBanking)
-  if (rzpKeyId && rzpKeySecret) {
-    try {
-      const razorpay = new Razorpay({
-        key_id: rzpKeyId,
-        key_secret: rzpKeySecret,
-      });
-
-      const order = await razorpay.orders.create({
-        amount: amountInPaise,
-        currency: "INR",
-        receipt: orderRef,
-        notes: {
-          supporter_name: name,
-          supporter_email: email,
-          preferred_method: method,
-          platform: "RESCUEN Official Web",
-        },
-      });
-
-      return NextResponse.json({
-        ok: true,
-        mode: "razorpay",
-        keyId: rzpKeyId,
-        order_id: order.id,
-        razorpayOrderId: order.id,
-        amount: order.amount, // in paise
-        amountInr: amount, // in INR
-        currency: order.currency,
-        orderRef,
-        orderToken,
-        upiId,
-      });
-    } catch (err: unknown) {
-      console.error("[donate/create-order] Razorpay SDK error:", err);
-      const statusCode =
-        typeof err === "object" && err !== null && "statusCode" in err
-          ? Number((err as { statusCode?: number }).statusCode)
-          : 500;
-
-      if (statusCode === 401) {
-        return NextResponse.json(
-          { ok: false, error: "Razorpay authentication failed. Please verify API keys." },
-          { status: 401 }
-        );
-      }
-      return NextResponse.json(
-        { ok: false, error: "Failed to create order with Razorpay." },
-        { status: 500 }
-      );
-    }
+  if (!rzpKeyId || !rzpKeySecret) {
+    return NextResponse.json(
+      { ok: false, error: "Payment gateway credentials are not configured on the server." },
+      { status: 401 }
+    );
   }
 
-  // Fallback Direct UPI Intent & Dynamic QR Mode if Razorpay credentials are removed
-  return NextResponse.json({
-    ok: true,
-    mode: "upi_direct",
-    upiId,
-    payeeName: "Team RESCUEN",
-    amount: amountInPaise,
-    amountInr: amount,
-    currency: "INR",
-    orderRef,
-    orderToken,
-  });
+  try {
+    const razorpay = new Razorpay({
+      key_id: rzpKeyId,
+      key_secret: rzpKeySecret,
+    });
+
+    const order = await razorpay.orders.create({
+      amount: amountInPaise,
+      currency: "INR",
+      receipt: orderRef,
+      notes: {
+        supporter_name: cleanName || "Well-Wisher (Anonymous)",
+        supporter_email: cleanEmail || "not_provided",
+        preferred_method: method,
+        platform: "RESCUEN Official Web",
+      },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      mode: "razorpay",
+      keyId: rzpKeyId,
+      order_id: order.id,
+      razorpayOrderId: order.id,
+      amount: order.amount, // in paise
+      amountInr: amount, // in INR
+      currency: order.currency,
+      orderRef,
+      orderToken,
+    });
+  } catch (err: unknown) {
+    console.error("[donate/create-order] Razorpay SDK error:", err);
+    const statusCode =
+      typeof err === "object" && err !== null && "statusCode" in err
+        ? Number((err as { statusCode?: number }).statusCode)
+        : 500;
+
+    if (statusCode === 401) {
+      return NextResponse.json(
+        { ok: false, error: "Razorpay authentication failed. Please verify API keys." },
+        { status: 401 }
+      );
+    }
+    return NextResponse.json(
+      { ok: false, error: "Failed to create order with Razorpay." },
+      { status: 500 }
+    );
+  }
 }

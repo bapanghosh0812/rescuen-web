@@ -15,13 +15,10 @@ import {
   CheckCircle2,
   ArrowRight,
   ArrowUpRight,
-  Copy,
-  Check,
   Download,
   RefreshCw,
   MailCheck,
   AlertCircle,
-  ExternalLink,
 } from "lucide-react";
 import NamasteIllustration from "@/components/NamasteIllustration";
 import { SITE } from "@/lib/site";
@@ -75,15 +72,15 @@ const PAYMENT_METHODS: {
   {
     id: "qr",
     title: "Dynamic QR Code",
-    subtitle: "Auto-generates QR of your exact ₹ amount",
-    badge: "Scan & Pay",
+    subtitle: "Scan & auto-verify exact ₹ amount",
+    badge: "Auto-Verify QR",
     icon: QrCode,
   },
   {
     id: "card",
     title: "Debit / Credit Card",
     subtitle: "RuPay, Visa, Mastercard",
-    badge: "256-Bit Encrypted",
+    badge: "256-Bit SSL",
     icon: CreditCard,
   },
   {
@@ -110,6 +107,7 @@ const RAZORPAY_ME_URL =
 export default function DonationPortal({ compact = false }: { compact?: boolean }) {
   const [amount, setAmount] = useState<number>(101);
   const [customAmountStr, setCustomAmountStr] = useState<string>("101");
+  // Name and Email are 100% optional! Only filled if user wants an official email receipt.
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [message, setMessage] = useState<string>("");
@@ -119,19 +117,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Direct UPI / Dynamic QR / Razorpay.me fallback session state
-  const [upiSession, setUpiSession] = useState<{
-    upiId: string;
-    payeeName: string;
-    orderRef: string;
-    orderToken: string;
-    upiUri: string;
-    isQrSelected: boolean;
-  } | null>(null);
-  const [utrInput, setUtrInput] = useState<string>("");
-  const [copiedUpi, setCopiedUpi] = useState<boolean>(false);
-
-  // Completed Receipt State
+  // Completed Receipt State (Only populated after real Razorpay cryptographic + bank API verification)
   const [receipt, setReceipt] = useState<VerifiedReceipt | null>(null);
 
   // Load Razorpay Standard Checkout SDK (<script src="https://checkout.razorpay.com/v1/checkout.js">)
@@ -183,71 +169,20 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
     liveDynamicUpiUri
   )}`;
 
-  function openFallbackSession(data: {
-    upiId?: string;
-    payeeName?: string;
-    orderRef: string;
-    orderToken: string;
-  }) {
-    const upiUri = `upi://pay?pa=${encodeURIComponent(
-      data.upiId || PUBLIC_UPI_ID
-    )}&pn=${encodeURIComponent("Team RESCUEN")}&am=${encodeURIComponent(
-      (amount || 101).toFixed(2)
-    )}&cu=INR&tn=${encodeURIComponent(`RESCUEN Mission Daan ${data.orderRef}`)}`;
-
-    setUpiSession({
-      upiId: data.upiId || PUBLIC_UPI_ID,
-      payeeName: data.payeeName || "Team RESCUEN",
-      orderRef: data.orderRef,
-      orderToken: data.orderToken,
-      upiUri,
-      isQrSelected: method === "qr",
-    });
-  }
-
-  // Direct 1-Click Razorpay.me Official Link Handler (with Receipt Verification session!)
-  async function handleRazorpayMeDirectClick() {
-    window.open(RAZORPAY_ME_URL, "_blank", "noopener,noreferrer");
-
-    // If user filled Name & Email, prepare a verification session so they can claim their official email receipt right after paying!
-    if (name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && amount >= 1) {
-      try {
-        const res = await fetch("/api/donate/create-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            email: email.trim(),
-            amount,
-            method,
-            message: message.trim() || undefined,
-            company,
-          }),
-        });
-        const data = await res.json();
-        if (res.ok && data.ok) {
-          openFallbackSession(data);
-        }
-      } catch {
-        // Ignore network error; Razorpay.me tab is already open
-      }
-    }
-  }
-
   async function initiateContribution(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!name.trim() || name.trim().length < 2) {
-      setError("Kripya apna shubh naam darj karein (Please enter your name).");
-      return;
-    }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError("Kripya sahi email address dein taaki Team RESCUEN aapko Daan Receipt bhej sake.");
-      return;
-    }
     if (!amount || amount < 1 || amount > 100000) {
       setError("Daan rashi ₹1 se ₹1,00,000 ke beech honi chahiye.");
+      return;
+    }
+
+    // If user typed an email, validate its format so receipt delivery succeeds
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError(
+        "Kripya sahi email address daalein (ya agar receipt nahi chahiye toh email khali chhod dein)."
+      );
       return;
     }
 
@@ -257,8 +192,8 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
+          name: name.trim() || undefined,
+          email: email.trim() || undefined,
           amount,
           method,
           message: message.trim() || undefined,
@@ -270,125 +205,99 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
       if (!res.ok || !data.ok) {
         setError(
           data.error ||
-            "Standard gateway busy — you can pay directly via our official Razorpay.me link below!"
+            "Gateway error — aap neeche diye gaye direct razorpay.me/@bapanghosh8243 link se pay kar sakte hain."
         );
         setLoading(false);
         return;
       }
 
-      // If user scanned the inline Dynamic QR and already entered their 12-digit UTR, verify immediately
-      if (method === "qr" && utrInput.trim().length >= 8) {
-        await verifyDirectUpi({
-          orderToken: data.orderToken,
-          paymentMethod: "qr",
-          upiTransactionId: utrInput.trim(),
-        });
-        return;
-      }
-
-      // PRIMARY: Open Razorpay Standard Web Checkout Modal
       const rzpOrderId = data.order_id || data.razorpayOrderId;
       const rzpKey = PUBLIC_RAZORPAY_KEY_ID || data.keyId;
 
-      if (data.mode === "razorpay" && rzpOrderId && rzpKey && window.Razorpay) {
-        const preferredInstrument = method === "qr" ? "upi" : method;
-
-        const rzpOptions: Record<string, unknown> = {
-          key: rzpKey,
-          amount: data.amount, // amount in paise from backend
-          currency: data.currency || "INR",
-          name: "Team RESCUEN",
-          description: `Surakshit Bharat Daan (${formattedAmount})`,
-          image: "/rescuen-logo.png",
-          order_id: rzpOrderId,
-          prefill: {
-            name: name.trim(),
-            email: email.trim(),
-          },
-          config: {
-            display: {
-              blocks: {
-                highlighted: {
-                  name:
-                    method === "qr"
-                      ? "Scan Dynamic UPI QR or Pay via UPI"
-                      : "Preferred Payment Method",
-                  instruments: [{ method: preferredInstrument }],
-                },
-              },
-              sequence: ["block.highlighted", "upi", "card", "wallet", "netbanking"],
-              preferences: { show_default_blocks: true },
-            },
-          },
-          theme: {
-            color: "#004aad",
-            backdrop_color: "rgba(10, 37, 64, 0.78)",
-          },
-          handler: async (response: {
-            razorpay_order_id: string;
-            razorpay_payment_id: string;
-            razorpay_signature: string;
-          }) => {
-            await verifyRazorpayPayment({
-              orderToken: data.orderToken,
-              paymentMethod: method,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            });
-          },
-          modal: {
-            ondismiss: () => {
-              setLoading(false);
-              // Automatically open the Direct QR / Razorpay.me fallback card so the user can still complete payment seamlessly!
-              openFallbackSession(data);
-            },
-          },
-        };
-
-        const rzp = new window.Razorpay(rzpOptions);
-        rzp.on("payment.failed", (failEvent: unknown) => {
-          const errDesc =
-            typeof failEvent === "object" &&
-            failEvent !== null &&
-            "error" in failEvent &&
-            typeof (failEvent as { error?: { description?: string } }).error?.description ===
-              "string"
-              ? (failEvent as { error: { description: string } }).error.description
-              : "Payment failed in modal — use our direct QR or official Razorpay.me link below!";
-          setError(errDesc);
-          setLoading(false);
-          openFallbackSession(data);
-        });
-        rzp.open();
+      if (!rzpOrderId || !rzpKey || !window.Razorpay) {
+        setError(
+          "Razorpay SDK load nahi ho paaya. Kripya neeche diye gaye direct razorpay.me/@bapanghosh8243 link ka upyog karein."
+        );
+        setLoading(false);
         return;
       }
 
-      // FALLBACK: Direct UPI App Intent, Dynamic QR & Razorpay.me Screen
-      openFallbackSession(data);
+      const preferredInstrument = method === "qr" ? "upi" : method;
 
-      if (
-        method === "upi" &&
-        typeof window !== "undefined" &&
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-      ) {
-        const upiUri = `upi://pay?pa=${encodeURIComponent(
-          data.upiId || PUBLIC_UPI_ID
-        )}&pn=${encodeURIComponent("Team RESCUEN")}&am=${encodeURIComponent(
-          amount.toFixed(2)
-        )}&cu=INR&tn=${encodeURIComponent(`RESCUEN Mission Daan ${data.orderRef}`)}`;
-        window.location.href = upiUri;
-      }
-      setLoading(false);
+      const rzpOptions: Record<string, unknown> = {
+        key: rzpKey,
+        amount: data.amount, // amount in paise from backend
+        currency: data.currency || "INR",
+        name: "Team RESCUEN",
+        description: `Surakshit Bharat Daan (${formattedAmount})`,
+        image: "/rescuen-logo.png",
+        order_id: rzpOrderId,
+        prefill: {
+          name: name.trim() || "Well-Wisher",
+          email: email.trim() || "supporter@rescuen.app",
+        },
+        config: {
+          display: {
+            blocks: {
+              highlighted: {
+                name:
+                  method === "qr"
+                    ? "Scan Dynamic UPI QR or Pay via UPI"
+                    : "Preferred Payment Method",
+                instruments: [{ method: preferredInstrument }],
+              },
+            },
+            sequence: ["block.highlighted", "upi", "card", "wallet", "netbanking"],
+            preferences: { show_default_blocks: true },
+          },
+        },
+        theme: {
+          color: "#004aad",
+          backdrop_color: "rgba(10, 37, 64, 0.78)",
+        },
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
+          await verifyRazorpayPayment({
+            orderToken: data.orderToken,
+            paymentMethod: method,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            setError("Payment incomplete — aapne payment window band kar di. Dubara try karein!");
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(rzpOptions);
+      rzp.on("payment.failed", (failEvent: unknown) => {
+        const errDesc =
+          typeof failEvent === "object" &&
+          failEvent !== null &&
+          "error" in failEvent &&
+          typeof (failEvent as { error?: { description?: string } }).error?.description === "string"
+            ? (failEvent as { error: { description: string } }).error.description
+            : "Payment declined or failed. Koi paisa nahi kata hai.";
+        setError(errDesc);
+        setLoading(false);
+      });
+      rzp.open();
     } catch {
       setError(
-        "Could not reach checkout server — click the official Razorpay.me direct button below to complete your contribution!"
+        "Network error — aap neeche diye gaye direct razorpay.me/@bapanghosh8243 button se donate kar sakte hain."
       );
       setLoading(false);
     }
   }
 
-  // Step 3: Verify Razorpay signature via POST /api/verify-payment
+  // Cryptographic HMAC-SHA256 + Server-to-Server Razorpay Bank Status Verification
   async function verifyRazorpayPayment(payload: {
     orderToken: string;
     paymentMethod: PaymentMethod;
@@ -408,67 +317,25 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
           razorpay_signature: payload.razorpay_signature,
           orderToken: payload.orderToken,
           paymentMethod: payload.paymentMethod === "qr" ? "UPI DYNAMIC QR" : payload.paymentMethod,
-          name: name.trim(),
-          email: email.trim(),
+          // Pass optional Name & Email ONLY if the user typed them on our form
+          name: name.trim() || undefined,
+          email: email.trim() || undefined,
           amount,
           message: message.trim() || undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        setError(data.error || "Payment signature verification failed.");
+        setError(data.error || "Payment verification failed with bank gateway.");
         setLoading(false);
         return;
       }
       setReceipt(data.receipt);
-      setUpiSession(null);
       setLoading(false);
     } catch {
       setError("Verification request failed. Please check your internet connection.");
       setLoading(false);
     }
-  }
-
-  // Verify Direct UPI / Dynamic QR / Razorpay.me UTR via POST /api/donate/verify
-  async function verifyDirectUpi(payload: {
-    orderToken: string;
-    paymentMethod: PaymentMethod;
-    upiTransactionId: string;
-  }) {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/donate/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderToken: payload.orderToken,
-          mode: "upi_direct",
-          paymentMethod: payload.paymentMethod,
-          upiTransactionId: payload.upiTransactionId,
-          message: message.trim() || undefined,
-          company,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        setError(data.error || "Could not verify transaction. Please check your Reference ID.");
-        setLoading(false);
-        return;
-      }
-      setReceipt(data.receipt);
-      setUpiSession(null);
-      setLoading(false);
-    } catch {
-      setError("Verification request failed. Please check your internet connection.");
-      setLoading(false);
-    }
-  }
-
-  function handleCopyUpi(upi: string) {
-    navigator.clipboard.writeText(upi);
-    setCopiedUpi(true);
-    setTimeout(() => setCopiedUpi(false), 2200);
   }
 
   function handlePrintReceipt() {
@@ -516,7 +383,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                 <div className="text-[11px] font-semibold text-ink-faint">Direct Mission</div>
               </div>
               <div className="rounded-2xl border border-white/90 bg-white/80 p-3 shadow-soft backdrop-blur-md">
-                <div className="font-display text-lg font-extrabold text-gold-600">Instant</div>
+                <div className="font-display text-lg font-extrabold text-gold-600">Optional</div>
                 <div className="text-[11px] font-semibold text-ink-faint">Email Receipt</div>
               </div>
             </div>
@@ -525,8 +392,8 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
             <div className="mt-5 flex items-center gap-3 rounded-2xl border border-brand-100 bg-brand-50/70 px-4 py-3 text-xs text-ink-soft">
               <ShieldCheck className="h-5 w-5 shrink-0 text-brand" />
               <span>
-                <b>Razorpay &amp; Bank-Grade Security:</b> Cryptographic HMAC-SHA256 verification.
-                Team RESCUEN never stores your card number or UPI PIN.
+                <b>Razorpay Bank-Verified Security:</b> Only genuine bank-captured transactions with
+                HMAC-SHA256 cryptographic signatures are verified.
               </span>
             </div>
           </div>
@@ -555,7 +422,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                     <CheckCircle2 className="h-9 w-9" />
                   </motion.div>
                   <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-4 py-1 text-xs font-extrabold uppercase tracking-wider text-gold-600">
-                    🙏 Koti-Koti Dhanyavaad · Official Daan Receipt
+                    🙏 Koti-Koti Dhanyavaad · Verified Contribution
                   </span>
                   <h2 className="h-display mt-3 text-3xl sm:text-4xl text-ink">
                     Namaste &amp; Thank You,{" "}
@@ -584,9 +451,15 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                       Hi {receipt.name} , we’ve got your contribution ✅
                     </div>
                     <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#b8c1d1]">
-                      Thank you for supporting <b className="text-white">Team RESCUEN</b>. An
-                      official copy of this Daan receipt has been sent to{" "}
-                      <b className="text-white">{receipt.email}</b>.
+                      Thank you for supporting <b className="text-white">Team RESCUEN</b>.{" "}
+                      {receipt.email ? (
+                        <>
+                          An official copy of this Daan receipt has been sent to{" "}
+                          <b className="text-white">{receipt.email}</b>.
+                        </>
+                      ) : (
+                        <>Your anonymous contribution has been verified and recorded.</>
+                      )}
                     </p>
 
                     <div className="my-5 rounded-2xl border-l-4 border-[#3b82f6] bg-[#1c2029] p-4 sm:p-5 text-xs sm:text-sm">
@@ -597,6 +470,10 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                         <div className="flex justify-between gap-2">
                           <span className="text-[#8b96a9]">Receipt ID:</span>
                           <span className="font-mono font-bold text-white">{receipt.receiptId}</span>
+                        </div>
+                        <div className="flex justify-between gap-2">
+                          <span className="text-[#8b96a9]">Supporter:</span>
+                          <span className="font-bold text-white">{receipt.name}</span>
                         </div>
                         <div className="flex justify-between gap-2">
                           <span className="text-[#8b96a9]">Amount Contributed:</span>
@@ -613,7 +490,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                           <span className="font-semibold text-[#93c5fd]">{receipt.paymentMethod}</span>
                         </div>
                         <div className="flex justify-between gap-2">
-                          <span className="text-[#8b96a9]">Reference / Payment ID:</span>
+                          <span className="text-[#8b96a9]">Razorpay Payment ID:</span>
                           <span className="font-mono font-semibold text-white">
                             {receipt.transactionId}
                           </span>
@@ -642,7 +519,11 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                       </div>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-[#4ade80]">
                         <MailCheck className="h-3.5 w-3.5" />
-                        {receipt.emailDelivered ? "Receipt Emailed" : "Verified & Recorded"}
+                        {receipt.email
+                          ? receipt.emailDelivered
+                            ? `Receipt Emailed to ${receipt.email}`
+                            : "Verified & Recorded"
+                          : "Verified Gupt Daan"}
                       </span>
                     </div>
                   </div>
@@ -661,7 +542,6 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                   <button
                     onClick={() => {
                       setReceipt(null);
-                      setUtrInput("");
                     }}
                     type="button"
                     className="btn-ghost"
@@ -671,152 +551,8 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                   </button>
                 </div>
               </motion.div>
-            ) : upiSession ? (
-              /* STATE 2: DYNAMIC QR CODE, DIRECT UPI & RAZORPAY.ME FALLBACK SCREEN */
-              <motion.div
-                key="upi-session-view"
-                initial={{ opacity: 0, y: 18, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden rounded-[2.2rem] border border-white/80 bg-white/95 p-6 sm:p-9 shadow-lift backdrop-blur-2xl ring-1 ring-brand-900/5"
-              >
-                <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
-                  <div>
-                    <span className="chip text-brand">
-                      <QrCode className="h-3.5 w-3.5" /> Instant QR, UPI &amp; Razorpay.me
-                    </span>
-                    <h3 className="h-display mt-2 text-2xl text-ink">
-                      Complete {formattedAmount} for Team RESCUEN
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setUpiSession(null)}
-                    className="rounded-xl border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-mist"
-                  >
-                    ← Back to Form
-                  </button>
-                </div>
-
-                {/* Big Dynamic Amount-Locked QR Card */}
-                <div className="mt-6 rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50/90 via-white to-gold-100/40 p-6 text-center shadow-soft">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3.5 py-1 text-xs font-extrabold text-white">
-                    <QrCode className="h-3.5 w-3.5" /> Dynamic QR Locked for {formattedAmount}
-                  </span>
-                  <p className="mt-2 text-xs sm:text-sm text-ink-soft">
-                    Scan this QR with <b>Google Pay, PhonePe, Paytm, BHIM, or any Bank App</b> — or
-                    use our direct <b>Razorpay.me</b> link below!
-                  </p>
-
-                  {/* Branded QR Frame */}
-                  <div className="mx-auto mt-5 flex max-w-[230px] flex-col items-center rounded-3xl border-2 border-brand/20 bg-white p-4 shadow-card">
-                    <div className="mb-2 flex items-center gap-1.5 text-xs font-extrabold text-ink">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/rescuen-logo.png" alt="RESCUEN" className="h-4 w-4" />
-                      TEAM RESCUEN · {formattedAmount}
-                    </div>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&color=0a2540&bgcolor=ffffff&data=${encodeURIComponent(
-                        upiSession.upiUri
-                      )}`}
-                      alt={`Dynamic UPI QR Code for ${formattedAmount}`}
-                      width={190}
-                      height={190}
-                      className="h-44 w-44 rounded-xl"
-                    />
-                    <div className="mt-2 text-[11px] font-bold text-safe-600">
-                      ✓ Verified NPCI UPI Dynamic QR
-                    </div>
-                  </div>
-
-                  {/* Direct App Open + Razorpay.me Link Buttons */}
-                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-                    <a
-                      href={upiSession.upiUri}
-                      className="btn-primary px-4 py-3 text-xs sm:text-sm shadow-glow"
-                    >
-                      <Smartphone className="h-4 w-4" />
-                      Open UPI App ({formattedAmount})
-                    </a>
-                    <a
-                      href={RAZORPAY_ME_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-gold px-4 py-3 text-xs sm:text-sm font-extrabold"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Pay via razorpay.me/@bapanghosh8243
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyUpi(upiSession.upiId)}
-                      className="btn-ghost px-3.5 py-2.5 text-xs"
-                    >
-                      {copiedUpi ? (
-                        <>
-                          <Check className="h-3.5 w-3.5 text-safe-600" /> Copied UPI ID
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3.5 w-3.5" /> Copy UPI: {upiSession.upiId}
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Step 2: Enter 12-Digit UTR / Reference No for Instant Greeting & Email Receipt */}
-                <div className="mt-6 rounded-3xl border border-line bg-paper p-5">
-                  <label
-                    htmlFor="utr-input"
-                    className="block text-xs font-bold uppercase tracking-wider text-ink"
-                  >
-                    Verify Payment · Enter UPI UTR or Razorpay Payment ID
-                  </label>
-                  <p className="mt-1 text-xs text-ink-faint">
-                    QR ya <b>razorpay.me</b> se payment complete hote hi apna{" "}
-                    <b>12-digit UTR / Payment ID</b> yahan daal kar Verify dabayein — turant
-                    celebration greeting khulegi aur <b>{email}</b> par official receipt email chali
-                    jayegi!
-                  </p>
-                  <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                    <input
-                      id="utr-input"
-                      type="text"
-                      value={utrInput}
-                      onChange={(e) => setUtrInput(e.target.value)}
-                      placeholder="e.g. 431018294812 or pay_Pxyz12345"
-                      maxLength={32}
-                      className="flex-1 rounded-2xl border border-line bg-white px-4 py-3.5 font-mono text-sm font-bold text-ink placeholder:font-sans placeholder:font-normal placeholder:text-ink-faint focus:border-brand"
-                    />
-                    <button
-                      type="button"
-                      disabled={loading || utrInput.trim().length < 8}
-                      onClick={() =>
-                        verifyDirectUpi({
-                          orderToken: upiSession.orderToken,
-                          paymentMethod: method,
-                          upiTransactionId: utrInput.trim(),
-                        })
-                      }
-                      className="btn-gold whitespace-nowrap px-6 py-3.5 text-sm font-extrabold disabled:opacity-50"
-                    >
-                      {loading ? "Verifying..." : "Verify & Get Greeting 🙏"}
-                    </button>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="mt-4 flex items-center gap-2 rounded-2xl border border-sos-200 bg-sos-50 px-4 py-3 text-xs font-semibold text-sos-700">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    <span>{error}</span>
-                  </div>
-                )}
-              </motion.div>
             ) : (
-              /* STATE 3: MAIN 2-3 CLICK LUXURY DONATION FORM */
+              /* STATE 2: MAIN 1-CLICK LUXURY DONATION FORM */
               <motion.form
                 key="donate-form-view"
                 onSubmit={initiateContribution}
@@ -838,12 +574,11 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                 </div>
 
                 <h2 className="h-display mt-4 text-2xl sm:text-3xl text-ink">
-                  Support <span className="text-gradient-brand">Team RESCUEN</span> in 2 Clicks
+                  Support <span className="text-gradient-brand">Team RESCUEN</span> in 1 Click
                 </h2>
                 <p className="mt-1.5 text-sm text-ink-soft">
-                  Choose any amount from <b>₹1 to ₹1,00,000</b>. Pay via <b>Dynamic QR</b>,{" "}
-                  <b>UPI App</b>, <b>Card</b>, or <b>Wallet</b> with instant greeting &amp; email
-                  receipt.
+                  Choose any amount from <b>₹1 to ₹1,00,000</b>. Name &amp; Email are{" "}
+                  <b>optional</b> (fill them only if you want an official Daan Receipt on email).
                 </p>
 
                 {/* 1. Preset Amount Chips with Glassy Spring Touch */}
@@ -902,78 +637,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                   </div>
                 </div>
 
-                {/* 2. Donor Name & Email for Instant Receipt */}
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="donor-name"
-                      className="block text-xs font-extrabold uppercase tracking-wider text-ink-soft"
-                    >
-                      Your Name *
-                    </label>
-                    <input
-                      id="donor-name"
-                      type="text"
-                      required
-                      maxLength={80}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Aarav Sharma"
-                      className="mt-2 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink-faint focus:border-brand focus:bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="donor-email"
-                      className="block text-xs font-extrabold uppercase tracking-wider text-ink-soft"
-                    >
-                      Email Address (For Official Receipt) *
-                    </label>
-                    <input
-                      id="donor-email"
-                      type="email"
-                      required
-                      maxLength={120}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="mt-2 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink-faint focus:border-brand focus:bg-white"
-                    />
-                  </div>
-                </div>
-
-                {/* Optional Blessing / Message */}
-                <div className="mt-4">
-                  <label
-                    htmlFor="donor-message"
-                    className="block text-xs font-extrabold uppercase tracking-wider text-ink-soft"
-                  >
-                    Blessing or Message for Team RESCUEN (Optional)
-                  </label>
-                  <input
-                    id="donor-message"
-                    type="text"
-                    maxLength={250}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Proud to support Team RESCUEN's women & citizen safety mission! 🙏"
-                    className="mt-2 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-brand focus:bg-white"
-                  />
-                </div>
-
-                {/* Hidden Honeypot against Bots */}
-                <input
-                  type="text"
-                  name="company"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  tabIndex={-1}
-                  autoComplete="off"
-                  className="hidden"
-                  aria-hidden="true"
-                />
-
-                {/* 3. Payment Method Selection (Includes Dynamic QR Option!) */}
+                {/* 2. Payment Method Selection (Includes Dynamic QR Option!) */}
                 <div className="mt-6">
                   <label className="block text-xs font-extrabold uppercase tracking-wider text-ink-soft">
                     2. Choose Payment Option (UPI App, Dynamic QR, Card, Wallet)
@@ -1036,7 +700,6 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                     >
                       <div className="rounded-3xl border-2 border-brand/25 bg-gradient-to-br from-brand-50/90 via-white to-gold-100/50 p-5 shadow-soft">
                         <div className="flex flex-col items-center gap-5 sm:flex-row">
-                          {/* Live Auto-Generated QR for Typed Amount */}
                           <div className="flex shrink-0 flex-col items-center rounded-2xl border border-line bg-white p-3 shadow-card">
                             <span className="mb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-brand">
                               Live QR · {formattedAmount}
@@ -1055,31 +718,18 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                             </span>
                           </div>
 
-                          {/* Instructions + Instant UTR Verification or Razorpay 1-Click QR */}
                           <div className="flex-1 text-left">
                             <div className="inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-3 py-0.5 text-[11px] font-extrabold text-gold-600">
-                              <QrCode className="h-3.5 w-3.5" /> Instant Scan &amp; Verify
+                              <QrCode className="h-3.5 w-3.5" /> Auto-Verified Razorpay QR
                             </div>
                             <h4 className="mt-2 text-base font-extrabold text-ink">
-                              Scan to Pay Exact <span className="text-brand">{formattedAmount}</span>
+                              Dynamic QR for <span className="text-brand">{formattedAmount}</span>
                             </h4>
                             <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-                              Yeh QR aapke type kiye hue <b>{formattedAmount}</b> ke liye real-time
-                              generate hua hai. Aap neeche button dabakar{" "}
-                              <b>Razorpay 1-Click Checkout</b> khol sakte hain, ya seedha is QR ko
-                              scan karke 12-digit UTR daal sakte hain:
+                              Neeche <b>&ldquo;Pay {formattedAmount}&rdquo;</b> button dabayein —
+                              Razorpay ka live bank-verified QR khulega jo scan karke pay hote hi{" "}
+                              <b>automatically verify</b> ho jayega (koi UTR daalne ki zarurat nahi)!
                             </p>
-
-                            <div className="mt-3">
-                              <input
-                                type="text"
-                                value={utrInput}
-                                onChange={(e) => setUtrInput(e.target.value)}
-                                placeholder="Optional: Enter 12-digit UTR if scanned directly"
-                                maxLength={32}
-                                className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 font-mono text-xs font-bold text-ink placeholder:font-sans placeholder:font-normal placeholder:text-ink-faint focus:border-brand"
-                              />
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -1087,13 +737,76 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                   )}
                 </AnimatePresence>
 
+                {/* 3. OPTIONAL Donor Name & Email for Official Email Receipt */}
+                <div className="mt-6 rounded-3xl border border-line bg-paper/70 p-4 sm:p-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-ink">
+                      3. Want Official Daan Receipt on Email? (Optional)
+                    </span>
+                    <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[10px] font-bold text-brand">
+                      Optional
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-ink-faint">
+                    Agar aapko <b>RESCUEN Support</b> se email par official receipt chahiye toh Name
+                    aur Email bhar dein, warna khali chhod kar seedha pay kar sakte hain:
+                  </p>
+
+                  <div className="mt-3 grid gap-3.5 sm:grid-cols-2">
+                    <div>
+                      <input
+                        id="donor-name"
+                        type="text"
+                        maxLength={80}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Your Name (Optional)"
+                        className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink-faint focus:border-brand"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        id="donor-email"
+                        type="email"
+                        maxLength={120}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Email for Receipt (Optional)"
+                        className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink-faint focus:border-brand"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <input
+                      id="donor-message"
+                      type="text"
+                      maxLength={250}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Blessing or Message for Team RESCUEN (Optional) 🙏"
+                      className="w-full rounded-2xl border border-line bg-white px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-brand"
+                    />
+                  </div>
+                </div>
+
+                {/* Hidden Honeypot against Bots */}
+                <input
+                  type="text"
+                  name="company"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  className="hidden"
+                  aria-hidden="true"
+                />
+
                 {/* Error Alert */}
                 {error && (
-                  <div className="mt-5 flex flex-col gap-2 rounded-2xl border border-sos-200 bg-sos-50 px-4 py-3 text-xs font-semibold text-sos-700">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 shrink-0" />
-                      <span>{error}</span>
-                    </div>
+                  <div className="mt-5 flex items-center gap-2 rounded-2xl border border-sos-200 bg-sos-50 px-4 py-3 text-xs font-semibold text-sos-700">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>{error}</span>
                   </div>
                 )}
 
@@ -1107,15 +820,10 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                 >
                   {loading ? (
                     "Opening Secure Razorpay Checkout..."
-                  ) : method === "qr" && utrInput.trim().length >= 8 ? (
-                    <>
-                      <CheckCircle2 className="h-5 w-5" />
-                      Verify {formattedAmount} QR Payment &amp; Get Greeting 🙏
-                    </>
                   ) : (
                     <>
                       <HeartHandshake className="h-5 w-5" />
-                      Pay {formattedAmount} to Team RESCUEN (1-Click Checkout) 🙏
+                      Pay {formattedAmount} to Team RESCUEN 🙏
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
@@ -1127,20 +835,22 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                     Agar kisi karan se modal na khule, toh seedha official Razorpay link se Daan
                     karein:
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleRazorpayMeDirectClick}
+                  <a
+                    href={RAZORPAY_ME_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-extrabold text-brand shadow-soft ring-1 ring-brand/20 transition-all hover:-translate-y-0.5 hover:bg-brand hover:text-white"
                   >
                     <span>⚡ Direct Pay via razorpay.me/@bapanghosh8243</span>
                     <ArrowUpRight className="h-3.5 w-3.5" />
-                  </button>
+                  </a>
                 </div>
 
                 <p className="mt-3 text-center text-[11px] text-ink-faint">
-                  Secured by <b>Razorpay</b>. By contributing, you voluntarily support{" "}
-                  <b>{SITE.name}</b>’s mission. An official automated receipt from{" "}
-                  <b>RESCUEN Support</b> is emailed immediately upon verification.
+                  Secured by <b>Razorpay</b>. Only genuine bank-captured transactions are verified.
+                  {email.trim()
+                    ? ` Official receipt will be emailed to ${email.trim()}.`
+                    : " Fill optional Email above if you want an email receipt."}
                 </p>
               </motion.form>
             )}

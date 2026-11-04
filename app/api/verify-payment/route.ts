@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import Razorpay from "razorpay";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import {
   verifyOrderToken,
@@ -46,54 +47,89 @@ export async function POST(req: Request) {
     );
   }
 
+  const key_id = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const secret = process.env.RAZORPAY_KEY_SECRET;
-  if (!secret) {
+  if (!key_id || !secret) {
     return NextResponse.json(
-      { ok: false, error: "Server payment verification secret is not configured." },
+      { ok: false, error: "Server payment verification credentials are not configured." },
       { status: 500 }
     );
   }
 
-  // Step 3: Verify HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
-  const isValid = verifyRazorpaySignature(
+  // 1) Cryptographic HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET) Verification
+  const isValidSignature = verifyRazorpaySignature(
     razorpay_order_id,
     razorpay_payment_id,
     razorpay_signature,
     secret
   );
 
-  if (!isValid) {
+  if (!isValidSignature) {
     return NextResponse.json(
       { ok: false, verified: false, error: "Invalid payment signature. Verification failed." },
       { status: 400 }
     );
   }
 
+  // 2) Server-to-Server Razorpay Payment Status Verification (Prevents any fake payment IDs)
+  let actualAmountInr = 0;
+  let actualMethod = "RAZORPAY VERIFIED";
+  try {
+    const razorpay = new Razorpay({ key_id, key_secret: secret });
+    const payment = await razorpay.payments.fetch(razorpay_payment_id);
+
+    if (
+      payment.order_id !== razorpay_order_id ||
+      (payment.status !== "captured" && payment.status !== "authorized")
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          verified: false,
+          error: `Payment is not captured/authorized by bank (status: ${payment.status}).`,
+        },
+        { status: 400 }
+      );
+    }
+
+    actualAmountInr = Math.round(Number(payment.amount) / 100);
+    if (payment.method) {
+      actualMethod = String(payment.method).toUpperCase();
+    }
+  } catch (err) {
+    console.error("[api/verify-payment] Failed to verify payment with Razorpay API:", err);
+    return NextResponse.json(
+      { ok: false, verified: false, error: "Unable to verify payment status with bank gateway." },
+      { status: 400 }
+    );
+  }
+
+  // 3) Replay Attack Protection
   if (isTransactionProcessed(razorpay_payment_id)) {
     return NextResponse.json(
-      { ok: false, error: "Payment ID has already been verified and processed." },
+      { ok: false, error: "This payment has already been verified and receipted." },
       { status: 409 }
     );
   }
   markTransactionProcessed(razorpay_payment_id);
 
-  // Extract donor metadata from signed orderToken if provided, else fallback to request fields
+  // 4) Extract Optional Donor Name & Email (Receipt Email is sent ONLY if user provided Email)
   const orderToken = typeof body.orderToken === "string" ? body.orderToken : "";
   const tokenPayload = orderToken ? verifyOrderToken(orderToken) : null;
 
-  const donorName =
-    tokenPayload?.name ||
-    (typeof body.name === "string" && body.name.trim() ? body.name.trim() : "Valued Supporter");
-  const donorEmail =
-    tokenPayload?.email ||
-    (typeof body.email === "string" && body.email.trim() ? body.email.trim() : "");
+  const rawFormName =
+    (typeof body.name === "string" ? body.name.trim() : "") ||
+    (tokenPayload?.name && tokenPayload.name !== "Well-Wisher" ? tokenPayload.name : "");
+  const rawFormEmail =
+    (typeof body.email === "string" ? body.email.trim() : "") ||
+    (tokenPayload?.email ? tokenPayload.email.trim() : "");
+
+  const donorName = rawFormName || "Well-Wisher";
+  const hasDonorEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawFormEmail);
   const amountInr =
+    actualAmountInr ||
     tokenPayload?.amount ||
     (typeof body.amount === "number" && body.amount >= 1 ? Math.round(body.amount) : 101);
-  const paymentMethod =
-    typeof body.paymentMethod === "string" && body.paymentMethod.trim()
-      ? body.paymentMethod.trim().toUpperCase()
-      : "RAZORPAY VERIFIED";
   const message =
     typeof body.message === "string" && body.message.trim()
       ? body.message.trim().slice(0, 400)
@@ -107,19 +143,19 @@ export async function POST(req: Request) {
   });
 
   let emailDelivered = false;
-  if (isMailerConfigured && donorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) {
+  if (isMailerConfigured) {
     try {
       const mailRes = await sendDonationEmails({
         receiptId,
         name: donorName,
-        email: donorEmail,
+        email: hasDonorEmail ? rawFormEmail : undefined,
         amount: amountInr,
-        paymentMethod,
+        paymentMethod: actualMethod,
         transactionId: razorpay_payment_id,
         message: message || undefined,
         timestamp,
       });
-      emailDelivered = mailRes.sent;
+      emailDelivered = mailRes.donorEmailSent;
     } catch (err) {
       console.error("[api/verify-payment] Email dispatch error:", err);
     }
@@ -128,12 +164,13 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     verified: true,
+    receiptRequested: hasDonorEmail,
     receipt: {
       receiptId,
       name: donorName,
-      email: donorEmail,
+      email: hasDonorEmail ? rawFormEmail : "",
       amount: amountInr,
-      paymentMethod,
+      paymentMethod: actualMethod,
       transactionId: razorpay_payment_id,
       orderId: razorpay_order_id,
       timestamp,
@@ -142,4 +179,3 @@ export async function POST(req: Request) {
     },
   });
 }
-
