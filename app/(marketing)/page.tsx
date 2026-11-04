@@ -5,6 +5,7 @@ import HowItWorks from "@/components/HowItWorks";
 import Showcase from "@/components/Showcase";
 import Security from "@/components/Security";
 import Testimonials from "@/components/Testimonials";
+import SupportMission from "@/components/SupportMission";
 import FAQ from "@/components/FAQ";
 import Contact from "@/components/Contact";
 import CTA from "@/components/CTA";
@@ -19,6 +20,7 @@ export default function HomePage() {
       <Showcase />
       <Security />
       <Testimonials />
+      <SupportMission />
       <FAQ />
       <Contact />
       <CTA />

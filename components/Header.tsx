@@ -14,6 +14,7 @@ import {
   LogIn,
   Instagram,
   MessageCircle,
+  HeartHandshake,
 } from "lucide-react";
 import { NAV, MENU_LINKS, SITE } from "@/lib/site";
 
@@ -66,10 +67,23 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
+          <Link
+            href="/donate"
+            className="rounded-xl bg-gold-100/80 px-3.5 py-2 text-sm font-extrabold text-gold-600 transition-all hover:bg-gold-200/80"
+          >
+            🙏 Support Mission
+          </Link>
         </nav>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          <Link
+            href="/donate"
+            className="btn-gold hidden px-4 py-2.5 text-xs font-extrabold sm:inline-flex"
+          >
+            <HeartHandshake className="h-4 w-4" />
+            Daan / Support
+          </Link>
           <Link href="/login" className="btn-ghost hidden px-4 py-2.5 text-sm sm:inline-flex">
             <LogIn className="h-4 w-4" />
             Sign in
@@ -106,6 +120,13 @@ export default function Header() {
                   <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
                     RESCUEN
                   </div>
+                  <Link
+                    href="/donate"
+                    onClick={() => setMenuOpen(false)}
+                    className="mb-1 flex items-center justify-between rounded-xl bg-gold-100/70 px-3 py-2.5 text-sm font-extrabold text-gold-600 transition-colors hover:bg-gold-200/80"
+                  >
+                    <span>🙏 Support Mission (Daan)</span>
+                  </Link>
                   {MENU_LINKS.map((l) => {
                     const external = l.href.startsWith("http");
                     return (
@@ -187,6 +208,13 @@ export default function Header() {
                   {item.label}
                 </Link>
               ))}
+              <Link
+                href="/donate"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-xl bg-gold-100/80 px-3 py-3 text-base font-extrabold text-gold-600 hover:bg-gold-200/80"
+              >
+                🙏 Support Mission (Daan)
+              </Link>
               <div className="mt-2 flex gap-2">
                 <Link href="/login" onClick={() => setMobileOpen(false)} className="btn-ghost flex-1">
                   <LogIn className="h-4 w-4" /> Sign in

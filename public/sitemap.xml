@@ -26,7 +26,15 @@
     </image:image>
   </url>
 
-  <!-- 2. Authentication & OTP Verified Safety Portal -->
+  <!-- 2. Support Team RESCUEN Mission (Daan Portal) -->
+  <url>
+    <loc>https://rescuen-web.netlify.app/donate</loc>
+    <lastmod>2026-11-05T00:00:00+05:30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- 3. Authentication & OTP Verified Safety Portal -->
   <url>
     <loc>https://rescuen-web.netlify.app/login</loc>
     <lastmod>2026-11-05T00:00:00+05:30</lastmod>
@@ -34,7 +42,7 @@
     <priority>0.9</priority>
   </url>
 
-  <!-- 3. Trust, Encryption & Women Helpline Security Centre -->
+  <!-- 4. Trust, Encryption & Women Helpline Security Centre -->
   <url>
     <loc>https://rescuen-web.netlify.app/security</loc>
     <lastmod>2026-11-05T00:00:00+05:30</lastmod>
@@ -42,7 +50,7 @@
     <priority>0.9</priority>
   </url>
 
-  <!-- 4. About RESCUEN & Founder Bapan Ghosh -->
+  <!-- 5. About RESCUEN & Founder Bapan Ghosh -->
   <url>
     <loc>https://rescuen-web.netlify.app/about</loc>
     <lastmod>2026-11-05T00:00:00+05:30</lastmod>
@@ -50,7 +58,7 @@
     <priority>0.9</priority>
   </url>
 
-  <!-- 5. Direct Legal & Compliance Routes -->
+  <!-- 6. Direct Legal & Compliance Routes -->
   <url>
     <loc>https://rescuen-web.netlify.app/terms</loc>
     <lastmod>2026-11-05T00:00:00+05:30</lastmod>
@@ -86,7 +94,7 @@
     <priority>0.7</priority>
   </url>
 
-  <!-- 6. Nested Legal Hub Routes -->
+  <!-- 7. Nested Legal Hub Routes -->
   <url>
     <loc>https://rescuen-web.netlify.app/legal/terms</loc>
     <lastmod>2026-11-05T00:00:00+05:30</lastmod>
@@ -123,4 +131,3 @@
   </url>
 
 </urlset>
-

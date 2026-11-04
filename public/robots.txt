@@ -7,6 +7,7 @@
 # 1. Global Crawler Access — Maximum Indexing Velocity
 User-agent: *
 Allow: /
+Allow: /donate
 Allow: /login
 Allow: /about
 Allow: /security
@@ -93,4 +94,3 @@ Allow: /
 # 8. Host & Canonical Sitemap Declaration
 Host: https://rescuen-web.netlify.app
 Sitemap: https://rescuen-web.netlify.app/sitemap.xml
-
