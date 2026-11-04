@@ -21,7 +21,7 @@ export const SITE = {
   instagram: "https://www.instagram.com/hello.officialrescuen",
   whatsapp: "https://whatsapp.com/channel/0029Vb7ZOwYJ93wNB8znbq3M",
   developerUrl: "https://bapanghosh.netlify.app/",
-  rescuen website: "https://rescuen-web.netlify.app/"
+  rescuen website: "https://rescuen-web.netlify.app/",
   officialPolicyUrl: "https://sites.google.com/view/rescuen-app-policy/home",
   // Address — independent developer, not a registered company.
   address: "Durgapur, West Bengal – 713212, India",
