@@ -41,6 +41,15 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      { source: "/terms", destination: "/legal/terms" },
+      { source: "/privacy", destination: "/legal/privacy" },
+      { source: "/disclaimer", destination: "/legal/disclaimer" },
+      { source: "/refund", destination: "/legal/refund" },
+      { source: "/cookies", destination: "/legal/cookies" },
+    ];
+  },
 };
 
 export default nextConfig;

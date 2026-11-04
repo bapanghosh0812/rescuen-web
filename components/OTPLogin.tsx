@@ -415,7 +415,8 @@ function friendlyError(err: unknown): string {
     "auth/code-expired": "The code expired. Please resend a new one.",
     "auth/quota-exceeded": "SMS limit reached. Please try again later.",
     "auth/captcha-check-failed": "Verification failed. Please refresh and try again.",
-    "auth/billing-not-enabled": "Phone sign-in needs to be enabled in Firebase.",
+    "auth/billing-not-enabled":
+      "Real SMS needs the Firebase Blaze plan. Tip: add a test phone number in Firebase to try it free.",
     "auth/operation-not-allowed":
       "SMS for your region isn’t enabled yet. (Enable it in Firebase → Authentication → Settings → SMS region policy.)",
     "auth/admin-restricted-operation":

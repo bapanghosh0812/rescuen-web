@@ -1,0 +1,96 @@
+# ============================================================================
+# RESCUEN (The Ultimate Safety) — Enterprise Production Crawler Directives
+# Architect & Developer: Bapan Ghosh (Hybrid Engineer)
+# Canonical Domain: https://rescuen-web.netlify.app/
+# ============================================================================
+
+# 1. Global Crawler Access — Maximum Indexing Velocity
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /about
+Allow: /security
+Allow: /terms
+Allow: /privacy
+Allow: /disclaimer
+Allow: /refund
+Allow: /cookies
+Allow: /legal/terms
+Allow: /legal/privacy
+Allow: /legal/disclaimer
+Allow: /legal/refund
+Allow: /legal/cookies
+Disallow: /api/
+Disallow: /_next/static/development/
+Disallow: /_next/data/
+Disallow: /private/
+Disallow: /admin/
+Disallow: /*?preview=*
+Disallow: /*?token=*
+Disallow: /*?session=*
+
+# 2. Google Search Engine (Core Web & Mobile-First Indexing)
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+
+User-agent: Googlebot-Mobile
+Allow: /
+Disallow: /api/
+
+User-agent: Googlebot-Image
+Allow: /
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.webp$
+Allow: /*.svg$
+
+User-agent: Googlebot-Video
+Allow: /
+
+# 3. Microsoft Bing & Copilot Search Ecosystem
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Crawl-delay: 1
+
+User-agent: AdIdxBot
+Allow: /
+
+# 4. Yahoo! Slurp Crawler
+User-agent: Slurp
+Allow: /
+Disallow: /api/
+Crawl-delay: 1
+
+# 5. DuckDuckGo Instant Answer & Privacy Search Engine
+User-agent: DuckDuckBot
+Allow: /
+Disallow: /api/
+
+# 6. Apple Spotlight, Siri & Safari Intelligence
+User-agent: Applebot
+Allow: /
+Disallow: /api/
+
+# 7. AI Search & Knowledge Graph Crawlers (Perplexity, OpenAI, Google-Extended)
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /api/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /api/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+
+User-agent: Google-Extended
+Allow: /
+
+# 8. Host & Canonical Sitemap Declaration
+Host: https://rescuen-web.netlify.app
+Sitemap: https://rescuen-web.netlify.app/sitemap.xml
+
