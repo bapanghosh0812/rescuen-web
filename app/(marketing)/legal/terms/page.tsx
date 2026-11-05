@@ -14,7 +14,7 @@ const sections: Section[] = [
     body: [
       `These Terms & Conditions (“Terms”) form a legally binding agreement between you (“User”, “you”) and ${SITE.legalName} (“RESCUEN”, “we”, “us”), governing your access to and use of the RESCUEN website, mobile applications, and related services (collectively, the “Services”).`,
       "By accessing, downloading, registering for, or using the Services in any way, you confirm that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If you do not agree, you must not use the Services.",
-      "RESCUEN is developed and operated by an independent developer (Bapan Ghosh) and is not, at present, a registered company. References to “RESCUEN”, “we”, or “us” mean that individual developer.",
+      "RESCUEN is developed and operated by Team RESCUEN. References to “RESCUEN”, “we”, or “us” mean Team RESCUEN.",
       { note: "This is a general template provided for convenience. It is not legal advice. Please have a qualified lawyer review and adapt these Terms for your jurisdiction before relying on them as final." },
     ],
   },

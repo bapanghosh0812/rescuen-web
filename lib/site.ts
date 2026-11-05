@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // RESCUEN (The Ultimate Safety) — Enterprise SEO & Master Content Control Center
-// Architect & Lead Developer: Bapan Ghosh (21-Year-Old Hybrid Engineer, Class of June 2027)
+// Architect & Lead Developer: Team RESCUEN (Surakshit Bharat Mission)
 // Live Production URL: https://rescuen-web.netlify.app/
 // Everything the site renders & indexes flows reactively from this module.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ export const SEO_CLUSTERS = {
     "rescuen safety app",
     "rescuen official website",
     "rescuen the ultimate safety",
-    "rescuen by bapan ghosh",
+    "rescuen safety platform",
     "emergency alert system",
     "best safety platform",
     "best personal safety app in india",
@@ -137,8 +137,8 @@ export const SEO_CLUSTERS = {
     "girls safety tracker chennai kolkata ahmedabad jaipur",
     "student safety app kota lucknow patna bhubaneswar",
     "best free sos app without subscription india",
-    "bapan ghosh hybrid engineer rescuen developer",
-    "bapan ghosh safety platform architect",
+    "community driven safety platform india",
+    "advanced emergency sos architecture",
     "indian emergency numbers 112 100 1091 108 1098 app",
     "how to send live location to police in emergency",
     "best alternative to bsafe Shake2Safety 112 india app",
@@ -159,19 +159,19 @@ export const SEO_KEYWORDS: string[] = [
 export const SITE = {
   name: "RESCUEN",
   fullName: "RESCUEN — The Ultimate Personal Safety & Women Protection Platform",
-  // Independent enterprise-grade safety platform engineered by Bapan Ghosh
-  legalName: "Bapan Ghosh (RESCUEN)",
-  owner: "Bapan Ghosh",
-  ownerTitle: "21-Year-Old Hybrid Engineer (Graduating June 2027) & Founder of RESCUEN",
+  // Independent enterprise-grade safety platform engineered by Team RESCUEN
+  legalName: "Team RESCUEN",
+  owner: "Team RESCUEN",
+  ownerTitle: "Founding Team · Surakshit Bharat Mission",
   url: "https://rescuen-web.netlify.app",
   canonicalUrl: "https://rescuen-web.netlify.app/",
   tagline: "The Ultimate Personal Safety Companion & Anti-Rape Emergency Shield",
   shortDescription:
-    "RESCUEN is India's #1 community-driven personal safety, women protection, and danger response platform engineered by Bapan Ghosh.",
+    "RESCUEN is India's #1 community-driven personal safety, women protection, and danger response platform engineered by Team RESCUEN.",
   description:
-    "RESCUEN (The Ultimate Safety) is an advanced personal safety app, women protection system, and anti-rape emergency alert platform engineered by Bapan Ghosh. Hold for 2 seconds to activate a 1KM live community rescue radar, silent SOS location SMS to family & police (112/100/1091), Hero Mode live navigation, write-only court-usable audio/video evidence vault, Firebase Follow-Me safe journey engine, and a 24×7 multilingual Gemini AI safety assistant.",
+    "RESCUEN (The Ultimate Safety) is an advanced personal safety app, women protection system, and anti-rape emergency alert platform engineered by Team RESCUEN. Hold for 2 seconds to activate a 1KM live community rescue radar, silent SOS location SMS to family & police (112/100/1091), Hero Mode live navigation, write-only court-usable audio/video evidence vault, Firebase Follow-Me safe journey engine, and a 24×7 multilingual Gemini AI safety assistant.",
   longSeoNarrative:
-    "RESCUEN (The Ultimate Safety) is a next-generation personal safety app, crisis management system, and women protection framework architected by Bapan Ghosh (21-year-old Hybrid Engineer, graduating June 2027). Built to eradicate street crimes, molestation, kidnapping, night-shift travel hazards, and sexual assault, RESCUEN transforms any smartphone into an unbreakable emergency broadcaster in 2 seconds. Whether you are a college student, working woman on a night shift, solo traveler, healthcare worker, or citizen stuck in danger, RESCUEN combines a Geohash-powered 1KM Live Community Rescue Radar, silent offline-ready SMS alerts to 5 trusted family contacts and Police (112, 100, 1091, 108), Hero Mode volunteer rescue routing, a Firebase Follow-Me dead-man's switch journey tracker, a tamper-proof write-only court-usable audio and AI-frame forensic evidence vault, Fake Call escape utility, and a calm Gemini AI safety assistant across 6 Indian languages (English, Hindi, Bengali, Marathi, Tamil, Telugu).",
+    "RESCUEN (The Ultimate Safety) is a next-generation personal safety app, crisis management system, and women protection framework architected by Team RESCUEN. Built to eradicate street crimes, molestation, kidnapping, night-shift travel hazards, and sexual assault, RESCUEN transforms any smartphone into an unbreakable emergency broadcaster in 2 seconds. Whether you are a college student, working woman on a night shift, solo traveler, healthcare worker, or citizen stuck in danger, RESCUEN combines a Geohash-powered 1KM Live Community Rescue Radar, silent offline-ready SMS alerts to 5 trusted family contacts and Police (112, 100, 1091, 108), Hero Mode volunteer rescue routing, a Firebase Follow-Me dead-man's switch journey tracker, a tamper-proof write-only court-usable audio and AI-frame forensic evidence vault, Fake Call escape utility, and a calm Gemini AI safety assistant across 6 Indian languages (English, Hindi, Bengali, Marathi, Tamil, Telugu).",
   appStoreUrl:
     process.env.NEXT_PUBLIC_APP_STORE_URL ||
     "https://play.google.com/store/apps/details?id=com.officialrescuen.app",
@@ -180,7 +180,7 @@ export const SITE = {
   // Official verified RESCUEN ecosystems
   instagram: "https://www.instagram.com/hello.officialrescuen",
   whatsapp: "https://whatsapp.com/channel/0029Vb7ZOwYJ93wNB8znbq3M",
-  developerUrl: "https://bapanghosh.netlify.app/",
+  developerUrl: "https://rescuen-web.netlify.app/about",
   officialPolicyUrl: "https://sites.google.com/view/rescuen-app-policy/home",
   address: "Durgapur, West Bengal – 713212, India",
   geo: {
@@ -198,7 +198,7 @@ export const PAGE_METADATA = {
     title:
       "RESCUEN — #1 Personal Safety App, Women Protection & 1KM Emergency Rescue Radar",
     description:
-      "Official RESCUEN Safety Platform by Bapan Ghosh. Instant 2-sec panic button, 1KM live community rescue radar, silent SOS location tracker, anti-rape protection tools, court-usable evidence vault, Firebase safe journey engine & Gemini AI safety assistant.",
+      "Official RESCUEN Safety Platform. Instant 2-sec panic button, 1KM live community rescue radar, silent SOS location tracker, anti-rape protection tools, court-usable evidence vault, Firebase safe journey engine & Gemini AI safety assistant.",
     canonical: "https://rescuen-web.netlify.app/",
   },
   login: {
@@ -208,9 +208,9 @@ export const PAGE_METADATA = {
     canonical: "https://rescuen-web.netlify.app/login",
   },
   about: {
-    title: "About RESCUEN & Founder Bapan Ghosh · Mission for Women & Citizen Safety",
+    title: "About RESCUEN · Mission for Women & Citizen Safety",
     description:
-      "Discover how 21-year-old Hybrid Engineer Bapan Ghosh architected RESCUEN to build a zero-tolerance anti-rape safety framework, 1KM community rescue radar, and 24×7 personal bodyguard for India and the world.",
+      "Discover how Team RESCUEN architected this platform to build a zero-tolerance anti-rape safety framework, 1KM community rescue radar, and 24×7 personal bodyguard for India and the world.",
     canonical: "https://rescuen-web.netlify.app/about",
   },
   security: {
@@ -447,7 +447,7 @@ export const FAQS = [
   },
   {
     q: "Who developed RESCUEN and where can I download the official Android app?",
-    a: "RESCUEN (The Ultimate Safety) was architected and developed by Bapan Ghosh, a 21-year-old Hybrid Engineer (graduating June 2027) from Durgapur, West Bengal, India. You can download the official Android application (`com.officialrescuen.app`) directly from the Google Play Store using the Download button on this website.",
+    a: "RESCUEN (The Ultimate Safety) was architected and developed by Team RESCUEN, an independent team dedicated to personal safety from West Bengal, India. You can download the official Android application (`com.officialrescuen.app`) directly from the Google Play Store using the Download button on this website.",
   },
   {
     q: "How do I delete my account and personal safety data if needed?",
@@ -471,7 +471,7 @@ export const FOOTER_GROUPS: { title: string; links: NavItem[] }[] = [
     links: [
       { label: "About RESCUEN", href: "/about" },
       { label: "Contact", href: "/#contact" },
-      { label: "Developer (Bapan Ghosh)", href: SITE.developerUrl },
+      { label: "Our Story", href: "/about" },
       { label: "Press & Media", href: "/about#press" },
       { label: "Blog", href: "/about#blog" },
     ],

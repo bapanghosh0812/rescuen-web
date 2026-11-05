@@ -59,7 +59,7 @@ export const metadata: Metadata = {
         url: `${SITE.url}/promo/promo-1.png`,
         width: 941,
         height: 1672,
-        alt: "RESCUEN — #1 Personal Safety App, 1KM Live Rescue Radar & Silent SOS Tool by Bapan Ghosh",
+        alt: "RESCUEN — #1 Personal Safety App, 1KM Live Rescue Radar & Silent SOS Tool",
       },
       {
         url: `${SITE.url}/logo.png`,
@@ -165,10 +165,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           ratingCount: "1250",
         },
         author: {
-          "@id": `${SITE.url}/#founder-bapan-ghosh`,
+          "@id": `${SITE.url}/#team-rescuen`,
         },
         creator: {
-          "@id": `${SITE.url}/#founder-bapan-ghosh`,
+          "@id": `${SITE.url}/#team-rescuen`,
         },
         publisher: {
           "@id": `${SITE.url}/#organization`,
@@ -188,7 +188,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         },
         foundingDate: "2025",
         founder: {
-          "@id": `${SITE.url}/#founder-bapan-ghosh`,
+          "@id": `${SITE.url}/#team-rescuen`,
         },
         address: {
           "@type": "PostalAddress",
@@ -216,11 +216,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       },
       {
         "@type": "Person",
-        "@id": `${SITE.url}/#founder-bapan-ghosh`,
-        name: "Bapan Ghosh",
-        jobTitle: "Hybrid Engineer & Lead Architect of RESCUEN (Class of June 2027)",
+        "@id": `${SITE.url}/#team-rescuen`,
+        name: "Team RESCUEN",
+        jobTitle: "Founding Team & Lead Architects of RESCUEN",
         description:
-          "Bapan Ghosh is a 21-year-old Hybrid Engineer (graduating June 2027) and the founder/architect of RESCUEN (The Ultimate Safety), India's community-driven personal safety, women protection, and emergency SOS ecosystem.",
+          "Team RESCUEN is the founding and engineering group behind RESCUEN (The Ultimate Safety), India's community-driven personal safety, women protection, and emergency SOS ecosystem.",
         url: SITE.developerUrl,
         nationality: {
           "@type": "Country",
@@ -253,7 +253,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           "@id": `${SITE.url}/#organization`,
         },
         creator: {
-          "@id": `${SITE.url}/#founder-bapan-ghosh`,
+          "@id": `${SITE.url}/#team-rescuen`,
         },
         inLanguage: "en-IN",
       },

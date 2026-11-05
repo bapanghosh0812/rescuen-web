@@ -1,6 +1,6 @@
 # ============================================================================
 # RESCUEN (The Ultimate Safety) — Enterprise Production Crawler Directives
-# Architect & Developer: Bapan Ghosh (Hybrid Engineer)
+# Architect & Developer: Team RESCUEN
 # Canonical Domain: https://rescuen-web.netlify.app/
 # ============================================================================
 
