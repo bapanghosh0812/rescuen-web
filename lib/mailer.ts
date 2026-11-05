@@ -15,8 +15,7 @@ import { SITE } from "@/lib/site";
 //   CONTACT_TO=rescuensupport@gmail.com   (where enquiries & donation alerts land)
 // ─────────────────────────────────────────────────────────────
 
-export const isMailerConfigured =
-  !!process.env.GMAIL_USER && !!process.env.GMAIL_APP_PASSWORD;
+export const isMailerConfigured = true;
 
 const BRAND = "#004aad";
 const NAVY = "#0a2540";
@@ -24,10 +23,15 @@ const SITE_URL =
   process.env.URL || process.env.DEPLOY_PRIME_URL || "https://rescuen-web.netlify.app";
 
 function getTransport() {
-  if (!isMailerConfigured) return null;
+  const user = (process.env.GMAIL_USER || "").trim();
+  const pass = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g, "");
+  if (!user || !pass) {
+    console.warn("[mailer] GMAIL_USER or GMAIL_APP_PASSWORD is not set in environment.");
+    return null;
+  }
   return nodemailer.createTransport({
     service: "gmail",
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+    auth: { user, pass },
   });
 }
 
@@ -131,8 +135,8 @@ export async function sendContactEmails(p: ContactPayload): Promise<{ sent: bool
               </div>
               <div style="color:#e5e9f0;font-size:15px">${safeMsg}</div>
             </div>
-            <div style="background:rgba(230,126,34,0.08);border:1px solid rgba(230,126,34,0.45);border-radius:12px;padding:15px 18px;margin:20px 0;color:#f39c12;font-size:13.5px;line-height:1.55">
-              ⚠️ If you are in immediate danger, use the SOS button in the RESCUEN app or call your local emergency number right now — please don’t wait for this email.
+            <div style="background:#161f30;border:1px solid #233554;border-radius:12px;padding:14px 16px;margin:18px 0;color:#93c5fd;font-size:13px;line-height:1.55">
+              Emergency SOS and 24&times;7 safety tools are always accessible directly inside the RESCUEN mobile app.
             </div>
             <p style="margin:24px 0 4px;color:#b8c1d1">Stay safe,</p>
             <p style="margin:0;font-weight:700;color:#ffffff;font-size:16px">Team RESCUEN</p>
@@ -171,8 +175,8 @@ export async function sendDonationEmails(
   const transport = getTransport();
   if (!transport) return { donorEmailSent: false, teamEmailSent: false };
 
-  const toTeam = (process.env.CONTACT_TO || process.env.GMAIL_USER || "").trim();
-  const from = `RESCUEN Support <${process.env.GMAIL_USER}>`;
+  const toTeam = (process.env.CONTACT_TO || process.env.GMAIL_USER || "rescuensupport@gmail.com").trim();
+  const from = `RESCUEN Support <${(process.env.GMAIL_USER || "rescuensupport@gmail.com").trim()}>`;
   const cleanDonorEmail = (p.email || "").trim();
   const hasValidDonorEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanDonorEmail);
 
@@ -188,10 +192,7 @@ export async function sendDonationEmails(
     maximumFractionDigits: 0,
   }).format(p.amount);
 
-  const logo = getLogoAttachment();
-  const logoImg = logo
-    ? `<img src="cid:rescuenlogo" width="44" height="44" alt="RESCUEN" style="display:block;border-radius:10px;background:#fff" />`
-    : `<img src="${SITE_URL}/rescuen-logo.png" width="44" height="44" alt="RESCUEN" style="display:block;border-radius:10px;background:#fff" />`;
+  const logoImg = `<img src="https://rescuen-web.netlify.app/rescuen-logo.png" width="40" height="40" alt="RESCUEN" style="display:block;border-radius:10px;background:#ffffff;padding:4px" />`;
 
   let donorEmailSent = false;
   let teamEmailSent = false;
@@ -203,9 +204,12 @@ export async function sendDonationEmails(
         from,
         to: cleanDonorEmail,
         replyTo: toTeam,
-        subject: `We received your contribution (${formattedAmount}) — RESCUEN Support`,
-        attachments: logo ? [{ ...logo }] : [],
-        text: `Hi ${displayName},\n\nWe've got your generous contribution of ${formattedAmount}! Thank you from the bottom of our hearts for supporting Team RESCUEN.\n\nOFFICIAL CONTRIBUTION RECEIPT\nReceipt No: ${p.receiptId}\nSupporter Name: ${displayName}\nAmount Contributed: ${formattedAmount}\nPayment Mode: ${p.paymentMethod.toUpperCase()}\nTransaction Reference: ${p.transactionId}\nDate: ${p.timestamp}\n\nYour contribution directly empowers Team RESCUEN to keep our life-saving SOS radar, women safety shield, and AI emergency tools 100% free for every citizen.\n\nStay safe,\nTeam RESCUEN\n${SITE_URL}`,
+        subject: `Official Contribution Receipt: ${formattedAmount} - Team RESCUEN`,
+        headers: {
+          "Auto-Submitted": "auto-generated",
+          "X-Entity-Ref-ID": safeReceiptId,
+        },
+        text: `Hi ${displayName},\n\nThank you for supporting Team RESCUEN. Your voluntary contribution of ${formattedAmount} has been verified and recorded.\n\nOFFICIAL CONTRIBUTION RECEIPT\nReceipt ID: ${p.receiptId}\nSupporter: ${displayName}\nAmount Contributed: ${formattedAmount}\nPayment Method: ${p.paymentMethod.toUpperCase()}\nTransaction Reference: ${p.transactionId}\nDate & Time: ${p.timestamp}\n\nYour contribution fuels Team RESCUEN's 24x7 emergency SOS infrastructure and keeps women safety 100% free.\n\nStay safe,\nTeam RESCUEN\n${SITE_URL}`,
         html: `
           <div style="background:#0b0d12;padding:24px 12px;font-family:Georgia,'Times New Roman',Inter,serif">
             <div style="max-width:560px;margin:auto;background:#12151c;border:1px solid #222836;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.65)">
@@ -224,14 +228,28 @@ export async function sendDonationEmails(
                 </table>
               </div>
 
+              <!-- Cartoon Illustration & Warm Namaste Greeting Banner -->
+              <div style="background:#171c26;padding:22px 20px 16px;text-align:center;border-bottom:1px solid #232a38">
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:auto;max-width:320px">
+                  <tr>
+                    <td style="text-align:center">
+                      <img src="https://rescuen-web.netlify.app/namaste-illustration.svg" alt="Namaste from Team RESCUEN" width="280" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:14px" />
+                    </td>
+                  </tr>
+                </table>
+                <div style="margin-top:14px;font-family:Inter,Arial,sans-serif;font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:1px;text-transform:uppercase">
+                  🙏 KOTI-KOTI DHANYAVAAD · CITIZEN SAFETY PARTNER 🙏
+                </div>
+              </div>
+
               <!-- Dark Luxury Body -->
-              <div style="padding:30px 26px;color:#e5e9f0;line-height:1.65;font-size:15px">
-                <div style="font-size:21px;font-weight:700;color:#ffffff;margin-bottom:14px">
-                  Hi ${safeName} , we’ve got your contribution ✅
+              <div style="padding:28px 24px;color:#e5e9f0;line-height:1.65;font-size:15px">
+                <div style="font-size:22px;font-weight:700;color:#ffffff;margin-bottom:12px">
+                  Namaste ${safeName}, we’ve received your contribution 🙏
                 </div>
 
                 <p style="margin:0 0 18px;color:#b8c1d1">
-                  Thank you for supporting <b style="color:#ffffff">RESCUEN Support</b>. Your generous contribution of <b style="color:#4ade80;font-size:17px">${formattedAmount}</b> has reached <b style="color:#ffffff">Team RESCUEN</b>. Because of protectors like you, our life-saving 1&nbsp;KM SOS Radar, Women Protection Shield, and AI Emergency Companion remain <b style="color:#ffffff">100% free</b> for every citizen in danger.
+                  Thank you for supporting <b style="color:#ffffff">Team RESCUEN</b>. Your generous contribution of <b style="color:#4ade80;font-size:17px">${formattedAmount}</b> has reached our safety mission. Because of protectors like you, our life-saving emergency SOS tools and Women Protection Shield remain <b style="color:#ffffff">100% free</b> for every citizen across the nation.
                 </p>
 
                 <!-- Official Daan Receipt Box (Left Blue Accent Bar) -->
@@ -275,19 +293,15 @@ export async function sendDonationEmails(
                   }
                 </div>
 
-                <!-- Signature Amber Emergency Notice Box -->
-                <div style="background:rgba(230,126,34,0.08);border:1px solid rgba(230,126,34,0.45);border-radius:12px;padding:15px 18px;margin:20px 0;color:#f39c12;font-size:13.5px;line-height:1.55">
-                  ⚠️ If you are in immediate danger, use the SOS button in the RESCUEN app or call your local emergency number right now — please don’t wait for this email.
-                </div>
-
-                <p style="margin:24px 0 4px;color:#b8c1d1">Stay safe,</p>
+                <p style="margin:24px 0 4px;color:#b8c1d1">With sincere gratitude &amp; respect,</p>
                 <p style="margin:0;font-weight:700;color:#ffffff;font-size:16px">Team RESCUEN</p>
+                <p style="margin:2px 0 0;color:#93c5fd;font-size:12px">Surakshit Bharat Mission</p>
               </div>
 
               <!-- Deep Navy Footer -->
               <div style="background:#082347;color:#8fa6c9;padding:18px 24px;font-size:12px;text-align:center;line-height:1.6">
                 RESCUEN — Women’s safety, reimagined.<br/>
-                This is an automated acknowledgement — just reply to this email to add anything more.
+                This is an official automated receipt · Keep this email for your personal financial records.
               </div>
             </div>
           </div>`,
@@ -306,7 +320,7 @@ export async function sendDonationEmails(
         to: toTeam,
         replyTo: hasValidDonorEmail ? cleanDonorEmail : undefined,
         subject: `🙏 New RESCUEN Daan Verified: ${formattedAmount} from ${displayName} (${safeMethod})`,
-        attachments: logo ? [{ ...logo }] : [],
+        attachments: [],
         text: `New Verified Donation Received for Team RESCUEN!\n\nReceipt ID: ${p.receiptId}\nDonor: ${displayName} (${cleanDonorEmail || "No email provided"})\nAmount: ${formattedAmount}\nMethod: ${p.paymentMethod}\nTransaction ID: ${p.transactionId}\nTime: ${p.timestamp}\nMessage: ${p.message || "None"}`,
         html: `
           <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e5e9f2;border-radius:16px;overflow:hidden">

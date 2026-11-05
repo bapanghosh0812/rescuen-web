@@ -154,3 +154,37 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   PRINT STYLES: Prints ONLY the official receipt cleanly on 1 single page
+   ═════════════════════════════════════════════════════════════════════ */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  header,
+  footer,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+  #printable-receipt-card {
+    display: block !important;
+    position: relative !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 680px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-shadow: none !important;
+    border: 1.5px solid #1e293b !important;
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+}
