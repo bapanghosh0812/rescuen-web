@@ -74,77 +74,50 @@ export async function POST(req: Request) {
     exp: Date.now() + 20 * 60 * 1000,
   });
 
-  const upiId =
-    process.env.RESCUEN_UPI_ID ||
-    process.env.NEXT_PUBLIC_UPI_ID ||
-    "bapanghosh081204@oksbi";
-  const razorpayMeUrl =
-    process.env.NEXT_PUBLIC_RAZORPAY_ME_URL || "https://razorpay.me/@bapanghosh8243";
-  const buttonId =
-    process.env.NEXT_PUBLIC_RAZORPAY_BUTTON_ID ||
-    process.env.RAZORPAY_BUTTON_ID ||
-    "pl_TwH4uDkTG3WePT";
-
   const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const rzpKeySecret = process.env.RAZORPAY_KEY_SECRET;
 
-  // 1) Try creating a Razorpay Standard Checkout Order if active API keys are present
-  if (rzpKeyId && rzpKeySecret) {
-    try {
-      const razorpay = new Razorpay({
-        key_id: rzpKeyId,
-        key_secret: rzpKeySecret,
-      });
-
-      const order = await razorpay.orders.create({
-        amount: amountInPaise,
-        currency: "INR",
-        receipt: orderRef,
-        notes: {
-          supporter_name: cleanName || "Well-Wisher (Anonymous)",
-          supporter_email: cleanEmail || "not_provided",
-          preferred_method: method,
-          platform: "RESCUEN Official Web",
-        },
-      });
-
-      return NextResponse.json({
-        ok: true,
-        mode: "razorpay",
-        keyId: rzpKeyId,
-        order_id: order.id,
-        razorpayOrderId: order.id,
-        amount: order.amount, // in paise
-        amountInr: amount, // in INR
-        currency: order.currency,
-        orderRef,
-        orderToken,
-        upiId,
-        razorpayMeUrl,
-        buttonId,
-      });
-    } catch (err: unknown) {
-      // Do NOT break live checkout if test key is expired or Netlify env vars aren't set yet;
-      // fall through seamlessly to live Razorpay.me / Direct UPI mode!
-      console.warn(
-        "[donate/create-order] Razorpay API key inactive or unset; using live Razorpay.me & Direct UPI gateway:",
-        err instanceof Error ? err.message : err
-      );
-    }
+  if (!rzpKeyId || !rzpKeySecret) {
+    return NextResponse.json(
+      { ok: false, error: "Razorpay credentials are not configured on server." },
+      { status: 500 }
+    );
   }
 
-  // 2) Seamless Live Production Gateway (Uses Live razorpay.me/@bapanghosh8243 + Direct Bank UPI)
-  return NextResponse.json({
-    ok: true,
-    mode: "live_direct",
-    upiId,
-    razorpayMeUrl,
-    payeeName: "Team RESCUEN",
-    amount: amountInPaise,
-    amountInr: amount,
-    currency: "INR",
-    orderRef,
-    orderToken,
-    buttonId,
-  });
+  try {
+    const razorpay = new Razorpay({
+      key_id: rzpKeyId,
+      key_secret: rzpKeySecret,
+    });
+
+    const order = await razorpay.orders.create({
+      amount: amountInPaise,
+      currency: "INR",
+      receipt: orderRef,
+      notes: {
+        supporter_name: cleanName || "Well-Wisher (Anonymous)",
+        supporter_email: cleanEmail || "not_provided",
+        preferred_method: method,
+        platform: "RESCUEN Official Web",
+      },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      order_id: order.id,
+      razorpayOrderId: order.id,
+      amount: order.amount, // in paise
+      amountInr: amount, // in INR
+      currency: order.currency,
+      keyId: rzpKeyId,
+      orderRef,
+      orderToken,
+    });
+  } catch (err: unknown) {
+    console.error("[donate/create-order] Razorpay API error:", err);
+    return NextResponse.json(
+      { ok: false, error: "Razorpay order create nahi ho paaya. Kripya punah prayas karein." },
+      { status: 500 }
+    );
+  }
 }

@@ -1,26 +1,23 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   HeartHandshake,
   ShieldCheck,
   Sparkles,
   Smartphone,
-  QrCode,
   CreditCard,
-  Wallet,
   Building2,
+  Wallet,
   Lock,
   CheckCircle2,
   ArrowRight,
-  ArrowUpRight,
   Download,
   RefreshCw,
   MailCheck,
   AlertCircle,
-  X,
-  ExternalLink,
+  QrCode,
 } from "lucide-react";
 import NamasteIllustration from "@/components/NamasteIllustration";
 
@@ -33,7 +30,7 @@ declare global {
   }
 }
 
-type PaymentMethod = "upi" | "qr" | "card" | "wallet" | "netbanking";
+type PaymentMethod = "upi" | "card" | "netbanking" | "wallet";
 
 type VerifiedReceipt = {
   receiptId: string;
@@ -65,49 +62,38 @@ const PAYMENT_METHODS: {
 }[] = [
   {
     id: "upi",
-    title: "UPI Instant App",
-    subtitle: "GPay, PhonePe, Paytm, BHIM",
-    badge: "1-Click Pay",
-    icon: Smartphone,
-  },
-  {
-    id: "qr",
-    title: "Dynamic QR Code",
-    subtitle: "Scan & auto-verify exact ₹ amount",
-    badge: "Auto-Verify QR",
+    title: "UPI & Official QR",
+    subtitle: "GPay, PhonePe, Paytm, BHIM & Auto-Verified QR",
+    badge: "Instant & QR",
     icon: QrCode,
   },
   {
     id: "card",
     title: "Debit / Credit Card",
-    subtitle: "RuPay, Visa, Mastercard",
+    subtitle: "RuPay, Visa, Mastercard, Maestro",
     badge: "256-Bit SSL",
     icon: CreditCard,
   },
   {
-    id: "wallet",
-    title: "Mobile Wallets",
-    subtitle: "Amazon Pay, Paytm, Mobikwik",
-    badge: "One-Tap",
-    icon: Wallet,
-  },
-  {
     id: "netbanking",
     title: "NetBanking",
-    subtitle: "SBI, HDFC, ICICI, Axis & All Banks",
+    subtitle: "SBI, HDFC, ICICI, Axis & 50+ Banks",
     badge: "Direct Bank",
     icon: Building2,
   },
+  {
+    id: "wallet",
+    title: "Mobile Wallets",
+    subtitle: "Amazon Pay, Mobikwik, Airtel Money",
+    badge: "One-Tap",
+    icon: Wallet,
+  },
 ];
 
-const PUBLIC_UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || "bapanghosh081204@oksbi";
-const PUBLIC_RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
-const RAZORPAY_ME_URL =
-  process.env.NEXT_PUBLIC_RAZORPAY_ME_URL || "https://razorpay.me/@bapanghosh8243";
-const RAZORPAY_BUTTON_ID =
-  process.env.NEXT_PUBLIC_RAZORPAY_BUTTON_ID || "pl_TwH4uDkTG3WePT";
+const PUBLIC_RAZORPAY_KEY_ID =
+  process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_TwHgq9sFTpjuIL";
 
-// On-demand SDK loader: Does NOT block initial page load or hurt Lighthouse Performance!
+// On-demand SDK loader: Loads Razorpay script only when user clicks Pay, keeping Lighthouse 95+!
 function loadRazorpaySdk(): Promise<boolean> {
   if (typeof window === "undefined") return Promise.resolve(false);
   if (window.Razorpay) return Promise.resolve(true);
@@ -130,32 +116,10 @@ function loadRazorpaySdk(): Promise<boolean> {
   });
 }
 
-// Official Razorpay Custom Button Embed
-function RazorpayButtonContainer({ buttonId }: { buttonId: string }) {
-  const containerRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    const form = containerRef.current;
-    if (!form || !buttonId) return;
-    form.innerHTML = "";
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/payment-button.js";
-    script.setAttribute("data-payment_button_id", buttonId);
-    script.async = true;
-    form.appendChild(script);
-  }, [buttonId]);
-
-  return (
-    <div className="flex flex-col items-center justify-center pt-2">
-      <form ref={containerRef} className="flex justify-center" />
-    </div>
-  );
-}
-
 export default function DonationPortal({ compact = false }: { compact?: boolean }) {
   const [amount, setAmount] = useState<number>(101);
   const [customAmountStr, setCustomAmountStr] = useState<string>("101");
-  // Name and Email are 100% optional! Only filled if user wants an official email receipt.
+  // Name and Email are 100% optional: only used for sending receipt email if user enters email
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [message, setMessage] = useState<string>("");
@@ -163,12 +127,10 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
   const [method, setMethod] = useState<PaymentMethod>("upi");
 
   const [loading, setLoading] = useState<boolean>(false);
+  const [statusText, setStatusText] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  // Active QR Modal state
-  const [showQrModal, setShowQrModal] = useState<boolean>(false);
-
-  // Completed Receipt State (Populated on verified completion)
+  // STRICT RULE: Receipt state is ONLY set when Razorpay server-to-server signature is verified!
   const [receipt, setReceipt] = useState<VerifiedReceipt | null>(null);
 
   const handlePresetClick = (val: number) => {
@@ -198,27 +160,17 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
     maximumFractionDigits: 0,
   }).format(amount || 0);
 
-  // Live NPCI UPI URI locked to the exact user-typed amount (₹1 to ₹1,00,000)
-  const liveDynamicUpiUri = `upi://pay?pa=${encodeURIComponent(
-    PUBLIC_UPI_ID
-  )}&pn=${encodeURIComponent("Team RESCUEN")}&am=${encodeURIComponent(
-    (amount || 1).toFixed(2)
-  )}&cu=INR&tn=${encodeURIComponent("Team RESCUEN Mission Daan")}`;
-
-  const liveDynamicQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&color=0a2540&bgcolor=ffffff&data=${encodeURIComponent(
-    liveDynamicUpiUri
-  )}`;
-
-  async function initiateContribution(e: React.FormEvent) {
+  // 100% OFFICIAL RAZORPAY STANDARD CHECKOUT FLOW
+  async function initiateRazorpayPayment(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setStatusText("");
 
     if (!amount || amount < 1 || amount > 100000) {
       setError("Daan rashi ₹1 se ₹1,00,000 ke beech honi chahiye.");
       return;
     }
 
-    // If user typed an email, validate its format so receipt delivery succeeds
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError(
         "Kripya sahi email address daalein (ya agar receipt nahi chahiye toh email khali chhod dein)."
@@ -226,15 +178,11 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
       return;
     }
 
-    // 1) DYNAMIC QR OPTION: Open dedicated high-res QR scanner modal directly
-    if (method === "qr") {
-      setShowQrModal(true);
-      return;
-    }
-
-    // 2) UPI, CARD, WALLET, NETBANKING: Open Razorpay Standard Checkout
     setLoading(true);
+    setStatusText("Razorpay Order create ho raha hai...");
+
     try {
+      // 1. Create order on backend with Razorpay API
       const res = await fetch("/api/donate/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -249,94 +197,106 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
       });
 
       const data = await res.json();
-      if (!res.ok || !data.ok) {
-        // Fallback directly to live Razorpay.me handle without throwing error
-        window.open(RAZORPAY_ME_URL, "_blank", "noopener,noreferrer");
+      if (!res.ok || !data.ok || !data.order_id) {
+        setError(data.error || "Order create karne me dikkat aayi. Kripya punah prayas karein.");
         setLoading(false);
+        setStatusText("");
         return;
       }
 
-      // If Razorpay Standard Checkout is active and keys are configured
-      if (data.mode === "razorpay" && data.order_id) {
-        const sdkLoaded = await loadRazorpaySdk();
-        if (sdkLoaded && window.Razorpay) {
-          const rzpKey = PUBLIC_RAZORPAY_KEY_ID || data.keyId;
-          const preferredInstrument = method;
-
-          const rzpOptions: Record<string, unknown> = {
-            key: rzpKey,
-            amount: data.amount,
-            currency: data.currency || "INR",
-            name: "Team RESCUEN",
-            description: `Surakshit Bharat Daan (${formattedAmount})`,
-            image: "/rescuen-logo.png",
-            order_id: data.order_id,
-            prefill: {
-              name: name.trim() || "Well-Wisher",
-              email: email.trim() || "supporter@rescuen.app",
-            },
-            config: {
-              display: {
-                blocks: {
-                  highlighted: {
-                    name: "Preferred Payment Method",
-                    instruments: [{ method: preferredInstrument }],
-                  },
-                },
-                sequence: ["block.highlighted", "upi", "card", "wallet", "netbanking"],
-                preferences: { show_default_blocks: true },
-              },
-            },
-            theme: {
-              color: "#004aad",
-              backdrop_color: "rgba(10, 37, 64, 0.78)",
-            },
-            handler: async (response: {
-              razorpay_order_id: string;
-              razorpay_payment_id: string;
-              razorpay_signature: string;
-            }) => {
-              await verifyRazorpayPayment({
-                orderToken: data.orderToken,
-                paymentMethod: method,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              });
-            },
-            modal: {
-              ondismiss: () => {
-                setLoading(false);
-              },
-            },
-          };
-
-          const rzp = new window.Razorpay(rzpOptions);
-          rzp.open();
-          setLoading(false);
-          return;
-        }
+      // 2. Load official Razorpay Checkout SDK
+      setStatusText("Razorpay Secure Checkout khul raha hai...");
+      const sdkReady = await loadRazorpaySdk();
+      if (!sdkReady || !window.Razorpay) {
+        setError("Razorpay SDK load nahi ho paaya. Kripya apna internet connection check karein.");
+        setLoading(false);
+        setStatusText("");
+        return;
       }
 
-      // Live Production Fallback: Open Razorpay Live Payment Page in clean popup/window
-      const targetUrl = data.razorpayMeUrl || RAZORPAY_ME_URL;
-      window.open(targetUrl, "_blank", "noopener,noreferrer");
+      const rzpKey = PUBLIC_RAZORPAY_KEY_ID || data.keyId;
+
+      const rzpOptions: Record<string, unknown> = {
+        key: rzpKey,
+        amount: data.amount, // in paise
+        currency: data.currency || "INR",
+        name: "Team RESCUEN",
+        description: `Surakshit Bharat Mission Daan (${formattedAmount})`,
+        image: "/rescuen-logo.png",
+        order_id: data.order_id,
+        prefill: {
+          name: name.trim() || "Well-Wisher",
+          email: email.trim() || "supporter@rescuen.app",
+        },
+        config: {
+          display: {
+            blocks: {
+              preferred: {
+                name: "Recommended for Quick Payment",
+                instruments: [{ method }],
+              },
+            },
+            sequence: ["block.preferred", "upi", "card", "netbanking", "wallet"],
+            preferences: { show_default_blocks: true },
+          },
+        },
+        theme: {
+          color: "#004aad",
+          backdrop_color: "rgba(10, 37, 64, 0.8)",
+        },
+        // STRICT: Called ONLY when user actually completes payment inside Razorpay!
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
+          setStatusText("Bank & Signature verify ho raha hai...");
+          await verifyPaymentOnServer({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            orderToken: data.orderToken,
+          });
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            setStatusText("");
+            setError("Payment cancel ho gaya ya window close ho gayi. Koi paisa nahi kata.");
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(rzpOptions);
+      rzp.on("payment.failed", (failRes: unknown) => {
+        setLoading(false);
+        setStatusText("");
+        const desc =
+          typeof failRes === "object" &&
+          failRes !== null &&
+          "error" in failRes &&
+          typeof (failRes as { error?: { description?: string } }).error?.description === "string"
+            ? (failRes as { error: { description: string } }).error.description
+            : "Payment fail ho gaya. Koi paisa nahi kata.";
+        setError(desc);
+      });
+
+      rzp.open();
       setLoading(false);
-      setShowQrModal(true);
+      setStatusText("");
     } catch {
-      window.open(RAZORPAY_ME_URL, "_blank", "noopener,noreferrer");
+      setError("Network error. Kripya dubara try karein.");
       setLoading(false);
-      setShowQrModal(true);
+      setStatusText("");
     }
   }
 
-  // Cryptographic HMAC-SHA256 + Server-to-Server Verification
-  async function verifyRazorpayPayment(payload: {
-    orderToken: string;
-    paymentMethod: PaymentMethod;
+  // 3. Cryptographic Signature + Bank Capture Verification
+  async function verifyPaymentOnServer(payload: {
     razorpay_order_id: string;
     razorpay_payment_id: string;
     razorpay_signature: string;
+    orderToken: string;
   }) {
     setLoading(true);
     setError(null);
@@ -349,81 +309,31 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
           razorpay_payment_id: payload.razorpay_payment_id,
           razorpay_signature: payload.razorpay_signature,
           orderToken: payload.orderToken,
-          paymentMethod: payload.paymentMethod === "qr" ? "UPI DYNAMIC QR" : payload.paymentMethod,
+          paymentMethod: method.toUpperCase(),
           name: name.trim() || undefined,
           email: email.trim() || undefined,
           amount,
           message: message.trim() || undefined,
         }),
       });
+
       const data = await res.json();
-      if (!res.ok || !data.ok) {
-        setError(data.error || "Payment verification failed with bank gateway.");
+      if (!res.ok || !data.ok || !data.verified) {
+        setError(data.error || "Payment verification failed. Please contact support.");
         setLoading(false);
+        setStatusText("");
         return;
       }
+
+      // SUCCESS: Payment is genuinely captured by bank and signature verified!
       setReceipt(data.receipt);
-      setShowQrModal(false);
       setLoading(false);
+      setStatusText("");
     } catch {
-      setError("Verification request failed. Please check your internet connection.");
+      setError("Verification network request failed. Please check your internet connection.");
       setLoading(false);
+      setStatusText("");
     }
-  }
-
-  // Handle direct completion for UPI QR or Razorpay Page payments
-  async function handleDirectCompletion() {
-    setLoading(true);
-    const donorName = name.trim() || "Well-Wisher";
-    const donorEmail = email.trim() || "";
-    const hasEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail);
-
-    const generatedReceiptId = `RES_${Date.now().toString().slice(-6)}_${Math.random()
-      .toString(36)
-      .substring(2, 6)
-      .toUpperCase()}`;
-
-    const timestamp = new Date().toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      dateStyle: "long",
-      timeStyle: "short",
-    });
-
-    let emailDelivered = false;
-
-    // Send email receipt if user filled email
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${donorName} [Mission Contributor]`,
-          email: hasEmail ? donorEmail : "rescuensupport@gmail.com",
-          subject: `❤️ Contribution Receipt ${generatedReceiptId} — ₹${amount} for Team RESCUEN`,
-          message: `Supporter: ${donorName} (${hasEmail ? donorEmail : "Anonymous"})\nAmount: ₹${amount}\nMethod: ${method.toUpperCase()}\nReceipt ID: ${generatedReceiptId}\nMessage: ${
-            message.trim() || "Citizen contribution to Team RESCUEN mission"
-          }`,
-        }),
-      });
-      if (res.ok) emailDelivered = true;
-    } catch {
-      // Non-blocking
-    }
-
-    setReceipt({
-      receiptId: generatedReceiptId,
-      name: donorName,
-      email: donorEmail,
-      amount,
-      paymentMethod: method === "qr" ? "UPI Dynamic QR" : method.toUpperCase(),
-      transactionId: `TXN_${Date.now().toString().slice(-8)}`,
-      timestamp,
-      message: message.trim(),
-      emailDelivered,
-    });
-
-    setShowQrModal(false);
-    setLoading(false);
   }
 
   function handlePrintReceipt() {
@@ -432,7 +342,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
 
   return (
     <div className="relative">
-      {/* Decorative Luxury Background Glows (Static, zero GPU redraw lag) */}
+      {/* Decorative Luxury Background Glows (Static, zero GPU lag) */}
       <div className="pointer-events-none absolute -top-16 -left-16 -z-10 h-72 w-72 rounded-full bg-brand-200/35 blur-2xl" />
       <div className="pointer-events-none absolute top-1/3 -right-16 -z-10 h-80 w-80 rounded-full bg-gold-200/30 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-10 left-1/3 -z-10 h-64 w-64 rounded-full bg-safe-200/25 blur-2xl" />
@@ -480,17 +390,17 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
             <div className="mt-5 flex items-center gap-3 rounded-2xl border border-brand-100 bg-brand-50/70 px-4 py-3 text-xs text-ink-soft">
               <ShieldCheck className="h-5 w-5 shrink-0 text-brand" />
               <span>
-                <b>Razorpay &amp; Bank Verified:</b> 256-bit encrypted secure checkout. Instant UPI
-                intent &amp; auto-generated amount QR.
+                <b>Official Razorpay Bank Gateway:</b> Only genuine bank-captured transactions with
+                HMAC-SHA256 cryptographic signatures receive receipts and greetings.
               </span>
             </div>
           </div>
         </div>
 
-        {/* ───────── RIGHT COLUMN: ULTRA-LUXURY GLASSY PAYMENT CARD ───────── */}
+        {/* ───────── RIGHT COLUMN: ULTRA-LUXURY PAYMENT CARD ───────── */}
         <div className="lg:col-span-7">
           <AnimatePresence mode="wait">
-            {/* STATE 1: COMPLETED RECEIPT & CELEBRATION GREETING */}
+            {/* STATE 1: COMPLETED RECEIPT & CELEBRATION GREETING (ONLY AFTER REAL BANK PAYMENT!) */}
             {receipt ? (
               <motion.div
                 key="receipt-view"
@@ -505,7 +415,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                     <CheckCircle2 className="h-9 w-9" />
                   </div>
                   <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-4 py-1 text-xs font-extrabold uppercase tracking-wider text-gold-600">
-                    🙏 Koti-Koti Dhanyavaad · Contribution Received
+                    🙏 Koti-Koti Dhanyavaad · Bank Verified Contribution
                   </span>
                   <h2 className="h-display mt-3 text-3xl sm:text-4xl text-ink">
                     Namaste &amp; Thank You,{" "}
@@ -517,7 +427,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                   </p>
                 </div>
 
-                {/* Exact Dark-Mode RESCUEN Support Frame Preview (Matches User's Screenshot!) */}
+                {/* Exact Dark-Mode RESCUEN Support Frame (Matches User's Screenshot!) */}
                 <div className="mt-7 overflow-hidden rounded-3xl border border-[#222836] bg-[#12151c] text-[#e5e9f0] shadow-2xl">
                   <div className="flex items-center justify-center gap-3 bg-[#004aad] px-6 py-4">
                     <span className="grid h-10 w-10 place-items-center rounded-xl bg-white p-1.5">
@@ -541,7 +451,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                           <b className="text-white">{receipt.email}</b>.
                         </>
                       ) : (
-                        <>Your contribution has been recorded and acknowledged.</>
+                        <>Your contribution has been verified by bank and recorded.</>
                       )}
                     </p>
 
@@ -569,11 +479,11 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                           </span>
                         </div>
                         <div className="flex justify-between gap-2">
-                          <span className="text-[#8b96a9]">Payment Method:</span>
-                          <span className="font-semibold text-[#93c5fd]">{receipt.paymentMethod}</span>
+                          <span className="text-[#8b96a9]">Payment Gateway:</span>
+                          <span className="font-semibold text-[#93c5fd]">Razorpay Official ({receipt.paymentMethod})</span>
                         </div>
                         <div className="flex justify-between gap-2">
-                          <span className="text-[#8b96a9]">Reference ID:</span>
+                          <span className="text-[#8b96a9]">Razorpay Payment ID:</span>
                           <span className="font-mono font-semibold text-white">
                             {receipt.transactionId}
                           </span>
@@ -605,8 +515,8 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                         {receipt.email
                           ? receipt.emailDelivered
                             ? `Receipt Emailed to ${receipt.email}`
-                            : "Recorded & Verified"
-                          : "Gupt Daan / Anonymous"}
+                            : "Verified & Recorded"
+                          : "Gupt Daan / Bank Verified"}
                       </span>
                     </div>
                   </div>
@@ -635,10 +545,10 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                 </div>
               </motion.div>
             ) : (
-              /* STATE 2: MAIN 1-CLICK LUXURY DONATION FORM */
+              /* STATE 2: 1-CLICK OFFICIAL RAZORPAY DONATION FORM */
               <motion.form
                 key="donate-form-view"
-                onSubmit={initiateContribution}
+                onSubmit={initiateRazorpayPayment}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -649,7 +559,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="chip border-gold-300/60 bg-gold-100/70 text-gold-600">
                     <HeartHandshake className="h-4 w-4 text-gold-600" />
-                    Team RESCUEN · Support &amp; Daan Portal
+                    Team RESCUEN · Official Daan Portal
                   </span>
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-safe-600">
                     <Lock className="h-3.5 w-3.5" /> Razorpay 256-Bit SSL
@@ -657,14 +567,14 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                 </div>
 
                 <h2 className="h-display mt-4 text-2xl sm:text-3xl text-ink">
-                  Support <span className="text-gradient-brand">Team RESCUEN</span> in 2-3 Clicks
+                  Support <span className="text-gradient-brand">Team RESCUEN</span> via Razorpay
                 </h2>
                 <p className="mt-1.5 text-sm text-ink-soft">
-                  Choose any amount from <b>₹1 to ₹1,00,000</b>. Name &amp; Email are{" "}
-                  <b>100% Optional</b> (fill them only if you want an official Daan Receipt on email).
+                  Choose any amount from <b>₹1 to ₹1,00,000</b>. Official Razorpay checkout supports{" "}
+                  <b>UPI, QR, Cards, and NetBanking</b> with instant automated verification.
                 </p>
 
-                {/* 1. Preset Amount Chips with Spring Touch */}
+                {/* 1. Preset Amount Chips */}
                 <div className="mt-6">
                   <label className="block text-xs font-extrabold uppercase tracking-wider text-ink-soft">
                     1. Select or Type Contribution Amount (₹1 – ₹1,00,000)
@@ -718,10 +628,10 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                   </div>
                 </div>
 
-                {/* 2. Payment Method Selection */}
+                {/* 2. Payment Method Preference */}
                 <div className="mt-6">
                   <label className="block text-xs font-extrabold uppercase tracking-wider text-ink-soft">
-                    2. Choose Payment Option (UPI App, Dynamic QR, Card, Wallet)
+                    2. Preferred Razorpay Payment Instrument
                   </label>
                   <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                     {PAYMENT_METHODS.map((pm) => {
@@ -767,55 +677,6 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                     })}
                   </div>
                 </div>
-
-                {/* LIVE DYNAMIC QR CODE PREVIEW (Shown directly when method === "qr") */}
-                <AnimatePresence>
-                  {method === "qr" && amount >= 1 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden mt-5"
-                    >
-                      <div className="rounded-3xl border-2 border-brand/25 bg-gradient-to-br from-brand-50/90 via-white to-gold-100/50 p-5 shadow-soft">
-                        <div className="flex flex-col items-center gap-5 sm:flex-row">
-                          <div className="flex shrink-0 flex-col items-center rounded-2xl border border-line bg-white p-3 shadow-card">
-                            <span className="mb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-brand">
-                              Dynamic QR · {formattedAmount}
-                            </span>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              key={amount}
-                              src={liveDynamicQrUrl}
-                              alt={`Dynamic QR Code for ${formattedAmount}`}
-                              width={150}
-                              height={150}
-                              className="h-36 w-36 rounded-lg"
-                            />
-                            <span className="mt-1.5 text-[10px] font-semibold text-safe-600">
-                              ✓ Amount Locked: {formattedAmount}
-                            </span>
-                          </div>
-
-                          <div className="flex-1 text-left">
-                            <div className="inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-3 py-0.5 text-[11px] font-extrabold text-gold-600">
-                              <QrCode className="h-3.5 w-3.5" /> Instant Scan &amp; Pay
-                            </div>
-                            <h4 className="mt-2 text-base font-extrabold text-ink">
-                              Scan with GPay, PhonePe, Paytm, BHIM
-                            </h4>
-                            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-                              Aap kisi bhi UPI app se is QR code ko scan karke direct pay kar sakte
-                              hain. Amount auto-locked hai. Pay karne ke baad neeche{" "}
-                              <b>&ldquo;Pay {formattedAmount}&rdquo;</b> dabakar apna greeting &amp; receipt
-                              dekh sakte hain!
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
 
                 {/* 3. OPTIONAL Donor Name & Email for Official Email Receipt */}
                 <div className="mt-6 rounded-3xl border border-line bg-paper/70 p-4 sm:p-5">
@@ -882,172 +743,50 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                   aria-hidden="true"
                 />
 
+                {/* Status / Loading Notification */}
+                {statusText && (
+                  <div className="mt-4 flex items-center gap-2 rounded-2xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-xs font-semibold text-brand">
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+                    <span>{statusText}</span>
+                  </div>
+                )}
+
                 {/* Error Alert */}
                 {error && (
-                  <div className="mt-5 flex items-center gap-2 rounded-2xl border border-sos-200 bg-sos-50 px-4 py-3 text-xs font-semibold text-sos-700">
+                  <div className="mt-4 flex items-center gap-2 rounded-2xl border border-sos-200 bg-sos-50 px-4 py-3 text-xs font-semibold text-sos-700">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <span>{error}</span>
                   </div>
                 )}
 
-                {/* Primary Submit CTA */}
+                {/* Primary Submit CTA — Launches Official Razorpay Modal */}
                 <button
                   type="submit"
                   disabled={loading || !amount || amount < 1}
                   className="btn-primary mt-6 w-full py-4 text-base font-extrabold shadow-glow disabled:opacity-50"
                 >
                   {loading ? (
-                    "Processing Payment..."
+                    "Opening Razorpay Secure Gateway..."
                   ) : (
                     <>
                       <HeartHandshake className="h-5 w-5" />
-                      Pay {formattedAmount} to Team RESCUEN 🙏
+                      Pay {formattedAmount} via Razorpay
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
                 </button>
 
-                {/* OFFICIAL RAZORPAY CUSTOM PAYMENT BUTTON / DIRECT RAZORPAY SECTION */}
-                <div className="mt-5 rounded-2xl border border-gold-300/60 bg-gradient-to-r from-gold-50/70 via-white to-brand-50/70 p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 text-xs font-extrabold text-ink">
-                    <Sparkles className="h-4 w-4 text-gold-600" />
-                    Official Razorpay 1-Click Payment Option
-                  </div>
-                  <p className="mt-1 text-[11px] text-ink-soft">
-                    Aap direct hamare official Razorpay payment page ya custom button se bhi pay kar
-                    sakte hain:
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
-                    {/* Official Razorpay.me Live Link */}
-                    <a
-                      href={RAZORPAY_ME_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-extrabold text-brand shadow-soft ring-1 ring-brand/20 transition-all hover:-translate-y-0.5 hover:bg-brand hover:text-white"
-                    >
-                      <span>⚡ Open razorpay.me/@bapanghosh8243</span>
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </a>
-
-                    {/* Direct UPI Intent Link */}
-                    <a
-                      href={liveDynamicUpiUri}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-safe-50 px-4 py-2 text-xs font-extrabold text-safe-700 shadow-soft ring-1 ring-safe-500/20 transition-all hover:-translate-y-0.5 hover:bg-safe-600 hover:text-white"
-                    >
-                      <Smartphone className="h-3.5 w-3.5" />
-                      <span>Open UPI App ({formattedAmount})</span>
-                    </a>
-                  </div>
-
-                  {/* Render Razorpay Custom Button if provided */}
-                  {RAZORPAY_BUTTON_ID && (
-                    <div className="mt-3 border-t border-line/60 pt-3">
-                      <RazorpayButtonContainer buttonId={RAZORPAY_BUTTON_ID} />
-                    </div>
-                  )}
+                <div className="mt-4 flex items-center justify-center gap-2 text-center text-xs text-ink-soft">
+                  <ShieldCheck className="h-4 w-4 text-brand" />
+                  <span>
+                    Official Razorpay Checkout · Instant QR &amp; UPI · 256-Bit Bank Encryption
+                  </span>
                 </div>
-
-                <p className="mt-3 text-center text-[11px] text-ink-faint">
-                  Secured by <b>Razorpay</b> &amp; <b>NPCI UPI</b>. All transactions direct to Team
-                  RESCUEN.
-                  {email.trim()
-                    ? ` Official receipt will be emailed to ${email.trim()}.`
-                    : " Name & Email are optional."}
-                </p>
               </motion.form>
             )}
           </AnimatePresence>
         </div>
       </div>
-
-      {/* ───────── DYNAMIC QR & DIRECT UPI MODAL ───────── */}
-      <AnimatePresence>
-        {showQrModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowQrModal(false)}
-              className="absolute inset-0 bg-ink/70 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/90 bg-white p-6 shadow-2xl z-10"
-            >
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-extrabold text-brand">
-                  <QrCode className="h-3.5 w-3.5" /> Live Dynamic UPI QR
-                </span>
-                <button
-                  onClick={() => setShowQrModal(false)}
-                  className="rounded-full p-1.5 text-ink-faint hover:bg-paper hover:text-ink"
-                  aria-label="Close modal"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="mt-4 text-center">
-                <h3 className="h-display text-xl text-ink">
-                  Scan &amp; Pay <span className="text-gradient-brand">{formattedAmount}</span>
-                </h3>
-                <p className="mt-1 text-xs text-ink-soft">
-                  Amount is auto-locked to <b>{formattedAmount}</b> for <b>Team RESCUEN</b>
-                </p>
-
-                {/* Enlarged QR Code */}
-                <div className="mx-auto mt-4 flex w-fit flex-col items-center rounded-2xl border border-line bg-paper p-3 shadow-inner">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={liveDynamicQrUrl}
-                    alt={`Dynamic QR for ${formattedAmount}`}
-                    width={220}
-                    height={220}
-                    className="h-52 w-52 rounded-xl bg-white p-2 shadow-sm"
-                  />
-                  <div className="mt-2 text-[11px] font-mono font-bold text-ink-soft">
-                    UPI: {PUBLIC_UPI_ID}
-                  </div>
-                </div>
-
-                {/* Mobile Intent Button */}
-                <div className="mt-4 space-y-2">
-                  <a
-                    href={liveDynamicUpiUri}
-                    className="btn-primary w-full py-3 text-sm font-extrabold"
-                  >
-                    <Smartphone className="h-4 w-4" />
-                    Open in GPay / PhonePe / Paytm App
-                  </a>
-
-                  <a
-                    href={RAZORPAY_ME_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-ghost w-full py-2.5 text-xs font-bold"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Or Pay via razorpay.me/@bapanghosh8243
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={handleDirectCompletion}
-                    disabled={loading}
-                    className="mt-2 w-full rounded-2xl border border-safe-300 bg-safe-50 py-3 text-sm font-extrabold text-safe-700 shadow-soft transition-all hover:bg-safe-600 hover:text-white"
-                  >
-                    {loading ? "Generating Receipt..." : "✓ I Have Paid · View Receipt & Greeting 🙏"}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
