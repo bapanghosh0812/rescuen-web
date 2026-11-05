@@ -695,9 +695,117 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
   }
 
   function handlePrintReceipt() {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+
+    const card = document.getElementById("printable-receipt-card");
+    if (!card) {
       window.print();
+      return;
     }
+
+    // Clean up any previously attached print iframe
+    const oldFrame = document.getElementById("receipt-print-frame");
+    if (oldFrame) {
+      oldFrame.remove();
+    }
+
+    // Create an isolated hidden iframe so ONLY the receipt card is printed (1 single page)
+    const iframe = document.createElement("iframe");
+    iframe.id = "receipt-print-frame";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      window.print();
+      return;
+    }
+
+    // Collect all loaded stylesheets and fonts from main document
+    let stylesHtml = "";
+    document.querySelectorAll('link[rel="stylesheet"], style').forEach((node) => {
+      stylesHtml += node.outerHTML;
+    });
+
+    const receiptTitle = receipt
+      ? `RESCUEN_Official_Receipt_${receipt.receiptId}`
+      : "RESCUEN_Official_Contribution_Receipt";
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>${receiptTitle}</title>
+          ${stylesHtml}
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 10mm;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              box-sizing: border-box !important;
+            }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #ffffff !important;
+              color: #0f172a !important;
+              font-family: Inter, system-ui, -apple-system, sans-serif !important;
+              width: 100% !important;
+              height: auto !important;
+            }
+            .print-container {
+              width: 100% !important;
+              max-width: 680px !important;
+              margin: 0 auto !important;
+              padding: 2px 0 !important;
+            }
+            #printable-receipt-card {
+              display: block !important;
+              width: 100% !important;
+              border: 1.5px solid #0f172a !important;
+              border-radius: 20px !important;
+              overflow: hidden !important;
+              box-shadow: none !important;
+              background: #ffffff !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-container">
+            ${card.outerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    // Small delay to ensure iframe DOM & styles are painted before calling print
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (err) {
+        console.error("[Print] Iframe print fallback:", err);
+        window.print();
+      }
+      setTimeout(() => {
+        iframe.remove();
+      }, 3000);
+    }, 450);
   }
 
   return (

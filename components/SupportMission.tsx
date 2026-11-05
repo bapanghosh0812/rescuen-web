@@ -12,7 +12,7 @@ export default function SupportMission() {
     >
       <div className="pointer-events-none absolute inset-0 bg-dotgrid opacity-50" />
       <div className="container-x relative">
-        <Reveal className="mx-auto max-w-3xl text-center mb-12">
+        <Reveal className="no-print mx-auto max-w-3xl text-center mb-12">
           <span className="chip border-gold-300/60 bg-gold-100/70 text-gold-600">
             <Sparkles className="h-3.5 w-3.5 text-gold-600" />
             Support Team RESCUEN · Surakshit Bharat Mission 🙏

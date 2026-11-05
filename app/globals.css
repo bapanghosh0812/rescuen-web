@@ -159,16 +159,55 @@
    PRINT STYLES: Prints ONLY the official receipt cleanly on 1 single page
    ═════════════════════════════════════════════════════════════════════ */
 @media print {
-  body {
-    background: #ffffff !important;
-    color: #0f172a !important;
-  }
+  /* Hide the rest of the website completely */
   header,
   footer,
   nav,
+  aside,
+  section:not(#donate),
+  #hero,
+  #stats,
+  #features,
+  #how-it-works,
+  #showcase,
+  #security,
+  #testimonials,
+  #faq,
+  #contact,
+  #download,
   .no-print {
     display: none !important;
   }
+
+  /* Reset layout constraints and background */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Flatten donate section wrapper */
+  #donate {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+  #donate > div {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  #donate form {
+    display: none !important;
+  }
+
   #printable-receipt-card {
     display: block !important;
     position: relative !important;
@@ -178,11 +217,12 @@
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     box-shadow: none !important;
-    border: 1.5px solid #1e293b !important;
-    border-radius: 16px !important;
+    border: 1.5px solid #0f172a !important;
+    border-radius: 18px !important;
     background: #ffffff !important;
     color: #0f172a !important;
   }
+
   @page {
     size: A4 portrait;
     margin: 10mm;
