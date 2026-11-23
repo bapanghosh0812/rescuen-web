@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ShieldCheck, ChevronRight } from "lucide-react";
+import PolicySummary from "@/components/ai/PolicySummary";
+import type { LegalDoc } from "@/lib/ai/types";
 import { SITE } from "@/lib/site";
 
 export type Block = string | { list: string[] } | { note: string };
@@ -26,18 +28,20 @@ function renderBlock(b: Block, i: number) {
     );
   }
   return (
-    <p key={i} className="mt-4 rounded-2xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm leading-relaxed text-ink-soft">
+    <p key={i} className="mt-4 rounded-2xl border border-gold-200 bg-gold-100/60 px-4 py-3 text-sm leading-relaxed text-ink-soft">
       {b.note}
     </p>
   );
 }
 
 export default function LegalShell({
+  doc,
   title,
   updated,
   intro,
   sections,
 }: {
+  doc: LegalDoc;
   title: string;
   updated: string;
   intro: string;
@@ -58,7 +62,7 @@ export default function LegalShell({
         </div>
       </div>
 
-      <div className="container-x grid gap-12 py-14 lg:grid-cols-[260px_1fr]">
+      <div className="container-x grid grid-cols-1 gap-12 py-14 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* TOC */}
         <aside className="hidden lg:block">
           <div className="sticky top-24 rounded-3xl border border-line bg-white p-5 shadow-soft">
@@ -79,6 +83,9 @@ export default function LegalShell({
 
         {/* Content */}
         <article className="max-w-3xl">
+          <div className="mb-10">
+            <PolicySummary doc={doc} title={title} />
+          </div>
           {sections.map((s) => (
             <section key={s.id} id={s.id} className="scroll-mt-28 border-b border-line py-8 first:pt-0">
               <h2 className="font-display text-2xl font-bold text-ink">{s.heading}</h2>

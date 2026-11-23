@@ -1,29 +1,18 @@
 "use client";
 
-// ─────────────────────────────────────────────────────────────
-// Firebase (client) — phone-number OTP sign-in.
-// The web config below is PUBLIC by design (Firebase ships it in the
-// browser). Real secrets (Admin private key, Gmail password) live only
-// in server-side env and never reach the client.
-//
-// Fill these in .env.local  →  NEXT_PUBLIC_FIREBASE_*   (see .env.local.example)
-// ─────────────────────────────────────────────────────────────
+// Phone sign-in in the browser. The web config is public by design; nothing
+// secret is ever referenced from this file.
 
-import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { getApp, getApps, initializeApp, type FirebaseApp } from "@firebase/app";
 import {
   getAuth,
   RecaptchaVerifier,
   signInWithPhoneNumber,
   type Auth,
   type ConfirmationResult,
-} from "firebase/auth";
+} from "@firebase/auth";
 
-// Firebase *web* config — read only from build-time env (NEXT_PUBLIC_*).
-// The web config is public by design (it ships in the browser), but we keep it
-// OUT of source so it never lands in the repo. Set these in .env.local (local)
-// and in your Netlify Environment variables (live). Real secrets — Gmail
-// password, Gemini key, Admin key — are server-only and never in the client.
-const firebaseConfig = {
+const config = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -32,53 +21,32 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/** True only when every required web-config value is present. */
-export const isFirebaseConfigured =
-  !!firebaseConfig.apiKey &&
-  !!firebaseConfig.authDomain &&
-  !!firebaseConfig.projectId &&
-  !!firebaseConfig.appId;
+const ready = Boolean(config.apiKey && config.authDomain && config.projectId && config.appId);
 
-let cachedApp: FirebaseApp | null = null;
+let app: FirebaseApp | null = null;
 
-function getFirebaseApp(): FirebaseApp | null {
-  if (!isFirebaseConfigured) return null;
-  if (cachedApp) return cachedApp;
-  cachedApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  return cachedApp;
+function auth(): Auth {
+  if (!ready) throw Object.assign(new Error("sign-in unavailable"), { code: "auth/unavailable" });
+  app ??= getApps().length ? getApp() : initializeApp(config);
+  const instance = getAuth(app);
+  instance.useDeviceLanguage();
+  return instance;
 }
 
-export function getFirebaseAuth(): Auth | null {
-  const app = getFirebaseApp();
-  if (!app) return null;
-  const auth = getAuth(app);
-  auth.useDeviceLanguage();
-  return auth;
-}
+let verifier: RecaptchaVerifier | null = null;
 
-/**
- * Create (once) an invisible reCAPTCHA verifier bound to a DOM node id.
- * Invisible => no visible checkbox, no extra "permission" for the user.
- */
-export function createRecaptcha(containerId: string): RecaptchaVerifier | null {
-  const auth = getFirebaseAuth();
-  if (!auth) return null;
-  // Reuse a verifier if one already exists on the window.
-  const w = window as unknown as { __rescuenRecaptcha?: RecaptchaVerifier };
-  if (w.__rescuenRecaptcha) return w.__rescuenRecaptcha;
-  const verifier = new RecaptchaVerifier(auth, containerId, { size: "invisible" });
-  w.__rescuenRecaptcha = verifier;
-  return verifier;
-}
-
-/** Send an OTP to an E.164 phone number (e.g. +919876543210). */
-export async function sendOtp(
-  phoneE164: string,
-  verifier: RecaptchaVerifier
-): Promise<ConfirmationResult> {
-  const auth = getFirebaseAuth();
-  if (!auth) throw new Error("Firebase not configured");
-  return signInWithPhoneNumber(auth, phoneE164, verifier);
+/** Sends a one-time code to an E.164 number such as +919876543210. */
+export async function sendOtp(phone: string, containerId: string): Promise<ConfirmationResult> {
+  const instance = auth();
+  verifier ??= new RecaptchaVerifier(instance, containerId, { size: "invisible" });
+  try {
+    return await signInWithPhoneNumber(instance, phone, verifier);
+  } catch (err) {
+    // A used verifier cannot be reused, so start fresh on the next attempt.
+    verifier.clear();
+    verifier = null;
+    throw err;
+  }
 }
 
 export type { ConfirmationResult };

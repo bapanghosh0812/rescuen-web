@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import LegalShell, { type Section } from "@/components/LegalShell";
+import { pageMeta } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Disclaimer",
-  description: "Important disclaimers regarding the use of RESCUEN safety services.",
-};
+  description: "What RESCUEN can and cannot do, and why 112 always comes first.",
+  path: "/legal/disclaimer",
+});
 
 const sections: Section[] = [
   {
@@ -54,6 +55,7 @@ const sections: Section[] = [
 export default function DisclaimerPage() {
   return (
     <LegalShell
+      doc="disclaimer"
       title="Disclaimer"
       updated="17 September 2026"
       intro="Please understand the limits of what RESCUEN can and cannot do before you rely on it."

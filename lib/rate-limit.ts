@@ -1,43 +1,39 @@
 import "server-only";
 
-// Lightweight in-memory rate limiter (per server instance). Good enough to
-// blunt abuse/spam of the contact + chat endpoints. For a multi-instance
-// deployment, swap the Map for a shared store (e.g. Upstash Redis).
+// In-memory limiter, one per server instance. netlify/edge-functions/api-guard.ts
+// adds a limit that is shared across all instances.
 
 type Bucket = { count: number; resetAt: number };
 const store = new Map<string, Bucket>();
+const MAX_KEYS = 20_000;
 
-export function rateLimit(
-  key: string,
-  { limit, windowMs }: { limit: number; windowMs: number }
-): { ok: boolean; remaining: number; retryAfterMs: number } {
+export type Limit = { limit: number; windowMs: number };
+
+export function rateLimit(key: string, { limit, windowMs }: Limit) {
   const now = Date.now();
-  const bucket = store.get(key);
+  if (store.size > MAX_KEYS) {
+    for (const [k, b] of store) if (now > b.resetAt) store.delete(k);
+    if (store.size > MAX_KEYS) store.clear();
+  }
 
+  const bucket = store.get(key);
   if (!bucket || now > bucket.resetAt) {
     store.set(key, { count: 1, resetAt: now + windowMs });
-    return { ok: true, remaining: limit - 1, retryAfterMs: 0 };
+    return { ok: true, retryAfterMs: 0 };
   }
-
-  if (bucket.count >= limit) {
-    return { ok: false, remaining: 0, retryAfterMs: bucket.resetAt - now };
-  }
-
+  if (bucket.count >= limit) return { ok: false, retryAfterMs: bucket.resetAt - now };
   bucket.count += 1;
-  return { ok: true, remaining: limit - bucket.count, retryAfterMs: 0 };
+  return { ok: true, retryAfterMs: 0 };
 }
 
-/** Best-effort client IP from proxy headers. */
+/**
+ * The visitor's IP as reported by Netlify, which overwrites anything a visitor
+ * sends. `x-forwarded-for` can be faked, so it is only used when that is missing.
+ */
 export function clientIp(req: Request): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("x-real-ip") || "unknown";
-}
-
-// Periodically drop expired buckets so the Map can’t grow unbounded.
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [k, v] of store) if (now > v.resetAt) store.delete(k);
-  }, 60_000).unref?.();
+  return (
+    req.headers.get("x-nf-client-connection-ip")?.trim() ||
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    "unknown"
+  );
 }

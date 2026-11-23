@@ -1,33 +1,30 @@
-import type { Metadata } from "next";
 import { HeartHandshake, ShieldCheck, Server, Users, Sparkles } from "lucide-react";
 import DonationPortal from "@/components/DonationPortal";
 import Reveal from "@/components/ui/Reveal";
+import { pageMeta } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Support Team RESCUEN Mission (Daan) · Keep Women & Citizen Safety 100% Free",
-  description:
-    "Stand with Team RESCUEN. Contribute ₹1 to ₹1,00,000 via UPI, Card, Wallet, or NetBanking to keep India's 1KM Live Rescue Radar, Silent SOS, and AI Safety Shield 100% free for every citizen.",
-  alternates: {
-    canonical: `${SITE.url}/donate`,
-  },
-};
+export const metadata = pageMeta({
+  title: "Support the Mission (Daan)",
+  description: "Support Team RESCUEN with any amount from ₹1 by UPI, card, net banking or wallet, and help keep core safety features free.",
+  path: "/donate",
+});
 
 const MISSION_PILLARS = [
   {
     icon: Server,
-    title: "24×7 Emergency SOS & Geohash Servers",
-    desc: "Keeps our high-availability 1 KM Live Rescue Radar, Firebase Safe Journey Engine, and real-time GPS broadcasters running with zero downtime.",
+    title: "24×7 Emergency SOS & Location Servers",
+    desc: "Somebody, somewhere, may press SOS at three in the morning. Your support keeps the 1 KM live rescue radar, Follow-Me and our location servers awake for them.",
   },
   {
     icon: ShieldCheck,
-    title: "100% Free Life-Saving Access Forever",
-    desc: "Ensures no student, night-shift worker, or woman in danger ever faces a paywall or subscription barrier during an emergency.",
+    title: "100% Free Life-Saving Access",
+    desc: "No student, night-shift worker or woman in danger should meet a paywall in the middle of an emergency. Your support makes sure they don’t.",
   },
   {
     icon: Users,
     title: "Pan-India Safety Awareness & Reach",
-    desc: "Helps Team RESCUEN onboard verified community Heroes across every city, college, and town in India so help is always within 1 KM.",
+    desc: "The radar is only as strong as the people around you. Your support helps us bring verified Heroes to more cities, colleges and towns, so that help is closer for everyone.",
   },
 ];
 
@@ -43,13 +40,12 @@ export default function DonatePage() {
               <Sparkles className="h-3.5 w-3.5 text-gold-600" />
               Surakshit Bharat Abhiyan · Team RESCUEN
             </span>
-            <h1 className="h-display mt-4 text-balance text-4xl sm:text-5xl lg:text-6xl">
+            <h1 className="h-display mt-4 text-balance text-4xl sm:text-5xl lg:text-[3.4rem] lg:leading-[1.1]">
               Empower <span className="text-gradient-brand">Team RESCUEN</span> to Protect Every Life
             </h1>
             <p className="mt-4 text-base sm:text-lg leading-relaxed text-ink-soft">
-              <b>RESCUEN</b> is a 100% free, life-saving safety platform built for the citizens of
-              India. Your voluntary <b>Daan (₹1 to ₹1,00,000)</b> directly fuels our emergency
-              infrastructure and helps us reach millions of families across the nation.
+              We built RESCUEN as a 100% free, life-saving safety platform for every citizen of India. Whatever you choose to give,
+              from ₹1 to ₹1,00,000, keeps our emergency services running and helps us reach more families across the country.
             </p>
           </div>
 
@@ -69,8 +65,7 @@ export default function DonatePage() {
               How <span className="text-gradient-brand">Team RESCUEN</span> Uses Every Rupee
             </h2>
             <p className="mt-3 text-ink-soft">
-              Every single contribution goes directly toward maintaining and scaling our life-saving
-              safety ecosystem.
+              Every contribution goes straight into maintaining and growing this life-saving work, and we’re grateful for each one.
             </p>
           </Reveal>
 

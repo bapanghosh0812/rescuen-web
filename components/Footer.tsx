@@ -1,31 +1,31 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Instagram, MessageCircle, Mail, MapPin, ShieldCheck, Code2 } from "lucide-react";
-import { SITE, FOOTER_GROUPS } from "@/lib/site";
+import { Flag, Instagram, Mail, MapPin, MessageCircle, ShieldCheck } from "lucide-react";
+import ReportLink from "@/components/feedback/ReportLink";
+import { FOOTER_GROUPS, SITE } from "@/lib/site";
 
 export default function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="relative mt-24 border-t border-line bg-paper">
+    <footer className="no-print relative mt-24 border-t border-line bg-paper">
       <div className="container-x py-16">
         <div className="grid gap-12 lg:grid-cols-12">
           {/* Brand column */}
           <div className="lg:col-span-4">
-            <Link href="/#home" className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5">
               <span className="grid h-10 w-10 place-items-center rounded-xl bg-white shadow-soft ring-1 ring-line">
-                <Image src="/rescuen-logo.png" alt="RESCUEN" width={30} height={30} className="object-contain" />
+                <Image src="/rescuen-logo.png" alt="" width={30} height={30} className="object-contain" />
               </span>
-              <span className="font-display text-xl font-extrabold tracking-tight">
+              <span data-no-translate className="font-display text-xl font-extrabold tracking-tight">
                 RESCU<span className="text-brand">EN</span>
               </span>
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-faint">{SITE.description}</p>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-faint">{SITE.story}</p>
 
             <div className="mt-5 flex items-center gap-2">
               {[
                 { icon: Instagram, href: SITE.instagram, label: "Instagram" },
                 { icon: MessageCircle, href: SITE.whatsapp, label: "WhatsApp Channel" },
-                { icon: Code2, href: SITE.developerUrl, label: "Developer" },
               ].map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}
@@ -50,8 +50,8 @@ export default function Footer() {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:col-span-8">
             {FOOTER_GROUPS.map((group) => (
               <div key={group.title}>
-                <h4 className="text-[13px] font-bold uppercase tracking-wider text-ink">{group.title}</h4>
-                <ul className="mt-4 space-y-2.5">
+                <h2 className="text-sm font-bold text-ink">{group.title}</h2>
+                <ul className="mt-3 space-y-0.5">
                   {group.links.map((l) => {
                     const external = l.href.startsWith("http");
                     return (
@@ -60,7 +60,7 @@ export default function Footer() {
                           href={l.href}
                           target={external ? "_blank" : undefined}
                           rel={external ? "noreferrer" : undefined}
-                          className="text-sm text-ink-faint transition-colors hover:text-brand"
+                          className="inline-block py-1 text-sm text-ink-faint transition-colors hover:text-brand"
                         >
                           {l.label}
                         </Link>
@@ -74,18 +74,18 @@ export default function Footer() {
         </div>
 
         {/* Contact strip */}
-        <div className="mt-12 grid gap-3 rounded-2xl border border-line bg-white p-5 shadow-soft sm:grid-cols-3">
+        <div className="mt-12 grid gap-3 rounded-2xl border border-line bg-white p-5 shadow-soft sm:grid-cols-2 lg:grid-cols-3">
           <a href={`mailto:${SITE.supportEmail}`} className="flex items-center gap-3 text-sm">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-50 text-brand">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand">
               <Mail className="h-4 w-4" />
             </span>
             <span className="min-w-0">
               <span className="block text-[11px] uppercase tracking-wide text-ink-faint">Email</span>
-              <span className="truncate font-semibold text-ink">{SITE.supportEmail}</span>
+              <span className="block font-semibold text-ink [overflow-wrap:anywhere]">{SITE.supportEmail}</span>
             </span>
           </a>
           <a href={SITE.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-3 text-sm">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-safe-50 text-safe-600">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-safe-50 text-safe-600">
               <MessageCircle className="h-4 w-4" />
             </span>
             <span>
@@ -93,8 +93,8 @@ export default function Footer() {
               <span className="font-semibold text-ink">Join our channel</span>
             </span>
           </a>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-50 text-brand">
+          <div className="flex items-center gap-3 text-sm sm:col-span-2 lg:col-span-1">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand">
               <MapPin className="h-4 w-4" />
             </span>
             <span>
@@ -107,18 +107,21 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 text-center text-xs text-ink-faint sm:flex-row sm:text-left">
           <p>
-            © {year} {SITE.name} · Built by {SITE.owner}. All rights reserved.
+            © {year} {SITE.name}. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            <Link href="/legal/terms" className="hover:text-brand">Terms</Link>
-            <Link href="/legal/privacy" className="hover:text-brand">Privacy</Link>
-            <Link href="/legal/disclaimer" className="hover:text-brand">Disclaimer</Link>
-            <Link href="/legal/refund" className="hover:text-brand">Refunds</Link>
-            <Link href="/legal/cookies" className="hover:text-brand">Cookies</Link>
+            <ReportLink area="Footer" className="inline-flex items-center gap-1.5 py-1.5 font-semibold hover:text-brand">
+              <Flag className="h-3.5 w-3.5" aria-hidden="true" /> Report a problem
+            </ReportLink>
+            <Link href="/legal/terms" className="py-1.5 hover:text-brand">Terms</Link>
+            <Link href="/legal/privacy" className="py-1.5 hover:text-brand">Privacy</Link>
+            <Link href="/legal/disclaimer" className="py-1.5 hover:text-brand">Disclaimer</Link>
+            <Link href="/legal/refund" className="py-1.5 hover:text-brand">Refunds</Link>
+            <Link href="/legal/cookies" className="py-1.5 hover:text-brand">Cookies</Link>
           </div>
         </div>
 
-        <p className="mt-6 text-center text-[11px] leading-relaxed text-ink-faint/80 sm:text-left">
+        <p className="mt-6 text-center text-[11px] leading-relaxed text-ink-faint sm:text-left">
           RESCUEN is a personal-safety aid and does not replace official emergency services. In a
           life-threatening emergency, always call 112 (India) or your local emergency number first.
         </p>

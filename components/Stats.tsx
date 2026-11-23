@@ -8,8 +8,8 @@ export default function Stats() {
         <Reveal>
           <div className="relative overflow-hidden rounded-4xl bg-ink px-6 py-12 shadow-lift sm:px-12">
             <div className="pointer-events-none absolute inset-0">
-              <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-brand/25 blur-3xl" />
-              <div className="absolute -right-16 bottom-0 h-72 w-72 rounded-full bg-gold/15 blur-3xl" />
+              <div className="absolute -left-20 -top-20 h-72 w-72 glow [--g:theme(colors.brand.DEFAULT/25%)]" />
+              <div className="absolute -right-16 bottom-0 h-72 w-72 glow [--g:theme(colors.gold.DEFAULT/15%)]" />
               <div
                 className="absolute inset-0 opacity-[0.08]"
                 style={{
@@ -22,7 +22,7 @@ export default function Stats() {
             <div className="relative grid grid-cols-2 gap-8 lg:grid-cols-4">
               {STATS.map((s) => (
                 <div key={s.label} className="text-center lg:text-left">
-                  <div className="font-display text-3xl font-extrabold text-white sm:text-4xl">
+                  <div className="stat-value font-display text-3xl font-extrabold text-white sm:text-4xl">
                     {s.value}
                   </div>
                   <div className="mt-1 text-sm text-white/60">{s.label}</div>

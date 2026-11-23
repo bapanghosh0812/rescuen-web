@@ -1,5 +1,5 @@
-import { Star, Quote } from "lucide-react";
-import { TESTIMONIALS } from "@/lib/site";
+import { PenLine, Quote, Star } from "lucide-react";
+import { SITE, TESTIMONIALS } from "@/lib/site";
 import Reveal from "@/components/ui/Reveal";
 
 export default function Testimonials() {
@@ -7,8 +7,7 @@ export default function Testimonials() {
     <section className="py-20 sm:py-28">
       <div className="container-x">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <span className="chip mx-auto">Loved by users</span>
-          <h2 className="h-display mt-5 text-3xl sm:text-4xl lg:text-5xl">
+          <h2 className="h-display text-3xl sm:text-4xl lg:text-5xl">
             Peace of mind, in their words
           </h2>
         </Reveal>
@@ -36,6 +35,15 @@ export default function Testimonials() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal className="mt-10 flex flex-col items-center gap-4 text-center">
+          <p className="max-w-lg text-ink-soft">
+            Have you used RESCUEN? Tell others how it went, in your own words. It helps someone else take that first step.
+          </p>
+          <a href={`${SITE.appStoreUrl}&showAllReviews=true`} target="_blank" rel="noreferrer" className="btn-ghost">
+            <PenLine className="h-4 w-4" aria-hidden="true" /> Write a review on Google Play
+          </a>
+        </Reveal>
       </div>
     </section>
   );

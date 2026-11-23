@@ -9,16 +9,16 @@ export default function CTA() {
         <Reveal>
           <div className="relative overflow-hidden rounded-5xl bg-brand-gradient px-6 py-16 text-center shadow-glow sm:px-12">
             <div className="pointer-events-none absolute inset-0 opacity-30">
-              <div className="absolute -left-10 top-0 h-64 w-64 rounded-full bg-white/30 blur-3xl" />
-              <div className="absolute -right-10 bottom-0 h-64 w-64 rounded-full bg-safe-300/40 blur-3xl" />
+              <div className="absolute -left-10 top-0 h-64 w-64 glow [--g:theme(colors.white/30%)]" />
+              <div className="absolute -right-10 bottom-0 h-64 w-64 glow [--g:theme(colors.safe.300/40%)]" />
             </div>
             <div className="relative mx-auto max-w-2xl">
               <h2 className="h-display text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
                 Carry a guardian in your pocket
               </h2>
               <p className="mt-4 text-lg text-white/90">
-                Join the RESCUEN community and feel safer every day. Free to download — set up in under
-                a minute.
+                Join the RESCUEN community and step out a little lighter every day. It’s free to download and takes only a few
+                minutes to set up.
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <a
@@ -34,7 +34,7 @@ export default function CTA() {
                 </span>
               </div>
               <p className="mt-6 inline-flex items-center gap-2 text-sm text-white/80">
-                <ShieldCheck className="h-4 w-4" /> Free · Privacy-first · No password required
+                <ShieldCheck className="h-4 w-4" /> Free, private, and no password required
               </p>
             </div>
           </div>

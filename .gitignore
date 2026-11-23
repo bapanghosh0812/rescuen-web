@@ -33,5 +33,5 @@ yarn-error.log*
 .idea/
 Thumbs.db
 
-# legacy Vite app (kept for reference, not built)
-# legacy-vite/
+# Netlify local state
+.netlify/

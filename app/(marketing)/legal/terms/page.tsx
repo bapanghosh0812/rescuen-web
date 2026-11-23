@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import LegalShell, { type Section } from "@/components/LegalShell";
+import { pageMeta } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Terms & Conditions",
-  description: "The terms governing your use of the RESCUEN website and app.",
-};
+  description: "The terms for using the RESCUEN website and app, with a summary in simple words.",
+  path: "/legal/terms",
+});
 
 const sections: Section[] = [
   {
@@ -15,7 +16,6 @@ const sections: Section[] = [
       `These Terms & Conditions (“Terms”) form a legally binding agreement between you (“User”, “you”) and ${SITE.legalName} (“RESCUEN”, “we”, “us”), governing your access to and use of the RESCUEN website, mobile applications, and related services (collectively, the “Services”).`,
       "By accessing, downloading, registering for, or using the Services in any way, you confirm that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If you do not agree, you must not use the Services.",
       "RESCUEN is developed and operated by Team RESCUEN. References to “RESCUEN”, “we”, or “us” mean Team RESCUEN.",
-      { note: "This is a general template provided for convenience. It is not legal advice. Please have a qualified lawyer review and adapt these Terms for your jurisdiction before relying on them as final." },
     ],
   },
   {
@@ -135,6 +135,7 @@ const sections: Section[] = [
 export default function TermsPage() {
   return (
     <LegalShell
+      doc="terms"
       title="Terms & Conditions"
       updated="17 September 2026"
       intro="Please read these Terms carefully before using RESCUEN. They explain what RESCUEN is (and is not), your responsibilities, and the limits of our liability."

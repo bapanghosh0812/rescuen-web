@@ -1,45 +1,39 @@
 import "server-only";
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import nodemailer from "nodemailer";
 import { SITE } from "@/lib/site";
 
-// ─────────────────────────────────────────────────────────────
-// Email via Gmail SMTP (server only). Uses a Gmail *App Password*
-// (NOT your normal password). Create one at:
-//   Google Account → Security → 2-Step Verification → App passwords
-//
-// .env.local:
-//   GMAIL_USER=rescuensupport@gmail.com
-//   GMAIL_APP_PASSWORD=xxxxxxxxxxxxxxxx
-//   CONTACT_TO=rescuensupport@gmail.com   (where enquiries & donation alerts land)
-// ─────────────────────────────────────────────────────────────
-
-export const isMailerConfigured = true;
+// Email through Gmail SMTP (server only), using an app password from
+// GMAIL_USER / GMAIL_APP_PASSWORD. CONTACT_TO is the support inbox.
 
 const BRAND = "#004aad";
-const NAVY = "#0a2540";
-const SITE_URL =
-  process.env.URL || process.env.DEPLOY_PRIME_URL || "https://rescuen-web.netlify.app";
+const SITE_URL = SITE.url;
 
 function getTransport() {
   const user = (process.env.GMAIL_USER || "").trim();
   const pass = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g, "");
   if (!user || !pass) {
-    console.warn("[mailer] GMAIL_USER or GMAIL_APP_PASSWORD is not set in environment.");
+    console.error("[mailer] mail credentials are not set");
     return null;
   }
   return nodemailer.createTransport({
     service: "gmail",
     auth: { user, pass },
+    connectionTimeout: 8_000,
+    greetingTimeout: 8_000,
+    socketTimeout: 12_000,
+    disableFileAccess: true,
+    disableUrlAccess: true,
   });
 }
 
 /** Inline logo as a CID attachment when the file is readable; else null. */
 function getLogoAttachment() {
   try {
-    const p = path.join(process.cwd(), "public", "rescuen-logo.png");
-    return { filename: "rescuen-logo.png", content: fs.readFileSync(p), cid: "rescuenlogo" };
+    const file = path.join(process.cwd(), "public", "rescuen-logo.png");
+    return { filename: "rescuen-logo.png", content: fs.readFileSync(file), cid: "rescuenlogo" };
   } catch {
     return null;
   }
@@ -50,106 +44,165 @@ function escapeHtml(s: string) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** A single header-safe line (no line breaks, no angle brackets). */
+function line(s: string, max: number) {
+  return s
+    .replace(/[\u0000-\u001f\u007f<>]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+/** A name that is safe to greet someone with: letters only, no links or sentences. */
+function greetingName(s: string) {
+  const name = line(s, 40);
+  return /^[\p{L}\p{M}][\p{L}\p{M}'’ -]{0,39}$/u.test(name) && name.split(" ").length <= 4 ? name : "there";
+}
+
+export function newReference(prefix: string) {
+  return `${prefix}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+}
+
+// At most two automatic replies per address per day, so nobody can use the form to flood an inbox.
+const replied = new Map<string, number[]>();
+function mayAutoReply(email: string) {
+  const key = email.toLowerCase();
+  const dayAgo = Date.now() - 24 * 60 * 60_000;
+  const recent = (replied.get(key) || []).filter((t) => t > dayAgo);
+  if (recent.length >= 2) return false;
+  if (replied.size > 5000) replied.clear();
+  replied.set(key, [...recent, Date.now()]);
+  return true;
 }
 
 type ContactPayload = { name: string; email: string; message: string; subject?: string };
 
-/**
- * Sends two emails:
- *  1) the enquiry to the RESCUEN support inbox (Reply-To = the visitor,
- *     so support can just hit "Reply" in Gmail), and
- *  2) a premium, branded welcome + thank-you auto-reply to the visitor.
- */
-export async function sendContactEmails(p: ContactPayload): Promise<{ sent: boolean }> {
+/** Delivers an enquiry to the support inbox, then sends the visitor a short confirmation. */
+export async function sendContactEmails(
+  p: ContactPayload
+): Promise<{ sent: boolean; replied: boolean; ref: string }> {
+  const ref = newReference("RES");
   const transport = getTransport();
-  if (!transport) return { sent: false };
+  if (!transport) return { sent: false, replied: false, ref };
 
-  const to = process.env.CONTACT_TO || process.env.GMAIL_USER!;
   const from = `RESCUEN Support <${process.env.GMAIL_USER}>`;
-  const cleanVisitorEmail = p.email.trim();
-  const safeName = escapeHtml(p.name);
-  const safeMsg = escapeHtml(p.message).replace(/\n/g, "<br/>");
-  const subject = p.subject ? escapeHtml(p.subject) : "General enquiry";
-
+  const email = line(p.email, 120);
+  const name = line(p.name, 80);
+  const subject = line(p.subject || "", 120) || "General enquiry";
   const logo = getLogoAttachment();
-  const logoImg = logo
-    ? `<img src="cid:rescuenlogo" width="44" height="44" alt="RESCUEN" style="display:block;border-radius:10px;background:#fff" />`
-    : `<img src="${SITE_URL}/rescuen-logo.png" width="44" height="44" alt="RESCUEN" style="display:block;border-radius:10px;background:#fff" />`;
+  const logoSrc = logo ? "cid:rescuenlogo" : `${SITE_URL}/rescuen-logo.png`;
+  const logoImg = `<img src="${logoSrc}" width="44" height="44" alt="RESCUEN" style="display:block;border-radius:10px;background:#fff" />`;
+  const attachments = logo ? [logo] : [];
 
-  // 1) Notification to support inbox
   await transport.sendMail({
     from,
-    to,
-    replyTo: cleanVisitorEmail,
-    subject: `🛟 New RESCUEN enquiry — ${subject}`,
-    text: `Name: ${p.name}\nEmail: ${cleanVisitorEmail}\nSubject: ${p.subject || "General"}\n\n${p.message}`,
-    attachments: logo ? [logo] : [],
+    to: process.env.CONTACT_TO || process.env.GMAIL_USER,
+    replyTo: email,
+    subject: `New RESCUEN enquiry: ${subject} [${ref}]`,
+    text: `Reference: ${ref}\nName: ${name}\nEmail: ${email}\nSubject: ${subject}\n\n${p.message}`,
+    attachments,
     html: `
       <div style="font-family:Inter,Arial,sans-serif;max-width:620px;margin:auto;border:1px solid #e5e9f2;border-radius:16px;overflow:hidden">
-        <div style="background:${BRAND};color:#fff;padding:18px 24px;display:flex;align-items:center;gap:12px">
-          ${logoImg}<span style="font-size:18px;font-weight:800;letter-spacing:.3px">RESCUEN — New Enquiry</span>
+        <div style="background:${BRAND};color:#fff;padding:18px 24px">
+          ${logoImg}<div style="margin-top:10px;font-size:18px;font-weight:800;letter-spacing:.3px">New enquiry · ${ref}</div>
         </div>
         <div style="padding:24px;color:#0a2540">
-          <p style="margin:0 0 6px"><b>Name:</b> ${safeName}</p>
-          <p style="margin:0 0 6px"><b>Email:</b> ${escapeHtml(cleanVisitorEmail)}</p>
-          <p style="margin:0 0 14px"><b>Subject:</b> ${subject}</p>
-          <div style="background:#f1f4fa;border-radius:12px;padding:16px;line-height:1.6">${safeMsg}</div>
-          <p style="margin:16px 0 0;color:#697089;font-size:13px">Hit “Reply” to answer ${safeName} directly.</p>
+          <p style="margin:0 0 6px"><b>Name:</b> ${escapeHtml(name)}</p>
+          <p style="margin:0 0 6px"><b>Email:</b> ${escapeHtml(email)}</p>
+          <p style="margin:0 0 14px"><b>Subject:</b> ${escapeHtml(subject)}</p>
+          <div style="background:#f1f4fa;border-radius:12px;padding:16px;line-height:1.6">${escapeHtml(p.message).replace(/\n/g, "<br/>")}</div>
+          <p style="margin:16px 0 0;color:#697089;font-size:13px">Press “Reply” to answer ${escapeHtml(name)} directly.</p>
         </div>
       </div>`,
   });
 
-  // 2) Premium welcome + thank-you auto-reply to the visitor
-  await transport.sendMail({
-    from,
-    to: cleanVisitorEmail,
-    subject: "We received your message — RESCUEN Support",
-    attachments: logo ? [logo] : [],
-    text: `Hi ${p.name},\n\nThank you for reaching out to RESCUEN Support. Your message has reached our team and we're already looking into it. You can expect a personal reply within 1-2 working days.\n\nYour message:\n"${p.message}"\n\nStay safe,\nTeam RESCUEN\n${SITE_URL}`,
-    html: `
-      <div style="background:#0b0d12;padding:24px 12px;font-family:Georgia,'Times New Roman',Inter,serif">
-        <div style="max-width:560px;margin:auto;background:#12151c;border:1px solid #222836;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.6)">
-          <div style="background:#004aad;padding:22px 24px;text-align:center">
-            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:auto">
-              <tr>
-                <td style="background:#ffffff;border-radius:12px;padding:6px;vertical-align:middle">
-                  ${logoImg}
-                </td>
-                <td style="padding-left:14px;vertical-align:middle;color:#ffffff;font-family:Georgia,serif;font-size:24px;font-weight:700;letter-spacing:1.2px">
-                  RESCUEN
-                </td>
-              </tr>
-            </table>
-          </div>
-          <div style="padding:30px 26px;color:#e5e9f0;line-height:1.65;font-size:15px">
-            <div style="font-size:21px;font-weight:700;color:#ffffff;margin-bottom:14px">
-              Hi ${safeName} , we’ve got your message ✅
-            </div>
-            <p style="margin:0 0 18px;color:#b8c1d1">
-              Thank you for reaching out to <b style="color:#ffffff">RESCUEN Support</b>. Your message has reached our team and we’re already looking into it. You can expect a personal reply within <b style="color:#ffffff">1-2 working days</b>.
-            </p>
-            <div style="background:#1c2029;border-left:4px solid #3b82f6;border-radius:12px;padding:16px 18px;margin:20px 0">
-              <div style="font-family:Inter,Arial,sans-serif;font-size:11px;color:#7e8b9f;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">
-                YOUR MESSAGE TO US
+  let didReply = false;
+  if (mayAutoReply(email)) {
+    const hello = greetingName(p.name);
+    try {
+      // The visitor's own text is deliberately not repeated here: the address is unverified.
+      await transport.sendMail({
+        from,
+        to: email,
+        subject: `We received your message [${ref}]`,
+        headers: { "Auto-Submitted": "auto-replied" },
+        attachments,
+        text: `Hi ${hello},\n\nThank you for reaching out to RESCUEN Support. Your message has reached our team and you can expect a personal reply within 1-2 working days.\n\nYour reference: ${ref}\n\nIf you are in danger right now, call 112 first.\n\nStay safe,\nTeam RESCUEN\n${SITE_URL}`,
+        html: `
+          <div style="background:#0b0d12;padding:24px 12px;font-family:Georgia,'Times New Roman',serif">
+            <div style="max-width:560px;margin:auto;background:#12151c;border:1px solid #222836;border-radius:18px;overflow:hidden">
+              <div style="background:${BRAND};padding:22px 24px;text-align:center">
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:auto"><tr>
+                  <td style="background:#ffffff;border-radius:12px;padding:6px;vertical-align:middle">${logoImg}</td>
+                  <td style="padding-left:14px;vertical-align:middle;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:1.2px">RESCUEN</td>
+                </tr></table>
               </div>
-              <div style="color:#e5e9f0;font-size:15px">${safeMsg}</div>
+              <div style="padding:30px 26px;color:#e5e9f0;line-height:1.65;font-size:15px">
+                <div style="font-size:21px;font-weight:700;color:#ffffff;margin-bottom:14px">Hi ${escapeHtml(hello)}, we’ve got your message</div>
+                <p style="margin:0 0 18px;color:#b8c1d1">Thank you for reaching out to <b style="color:#ffffff">RESCUEN Support</b>. Your message has reached our team. You can expect a personal reply within <b style="color:#ffffff">1-2 working days</b>.</p>
+                <div style="background:#1c2029;border-left:4px solid #3b82f6;border-radius:12px;padding:16px 18px;margin:20px 0">
+                  <div style="font-family:Arial,sans-serif;font-size:11px;color:#8b96a9;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Your reference</div>
+                  <div style="color:#ffffff;font-family:monospace;font-size:17px;font-weight:700">${ref}</div>
+                </div>
+                <p style="margin:18px 0;color:#93c5fd;font-size:13px">If you are in danger right now, please call 112 first.</p>
+                <p style="margin:24px 0 4px;color:#b8c1d1">Stay safe,</p>
+                <p style="margin:0;font-weight:700;color:#ffffff;font-size:16px">Team RESCUEN</p>
+              </div>
+              <div style="background:#082347;color:#8fa6c9;padding:18px 24px;font-size:12px;text-align:center;line-height:1.6">This is an automatic confirmation. Reply to this email to add anything more.</div>
             </div>
-            <div style="background:#161f30;border:1px solid #233554;border-radius:12px;padding:14px 16px;margin:18px 0;color:#93c5fd;font-size:13px;line-height:1.55">
-              Emergency SOS and 24&times;7 safety tools are always accessible directly inside the RESCUEN mobile app.
-            </div>
-            <p style="margin:24px 0 4px;color:#b8c1d1">Stay safe,</p>
-            <p style="margin:0;font-weight:700;color:#ffffff;font-size:16px">Team RESCUEN</p>
-          </div>
-          <div style="background:#082347;color:#8fa6c9;padding:18px 24px;font-size:12px;text-align:center;line-height:1.6">
-            RESCUEN — Women’s safety, reimagined.<br/>
-            This is an automated acknowledgement — just reply to this email to add anything more.
-          </div>
+          </div>`,
+      });
+      didReply = true;
+    } catch {
+      console.error("[mailer] confirmation email failed");
+    }
+  }
+  return { sent: true, replied: didReply, ref };
+}
+
+export type IssueReport = {
+  ref: string;
+  code: string;
+  page: string;
+  area: string;
+  message: string;
+  email: string;
+  device: string;
+};
+
+/** Delivers a visitor's problem report to the support inbox. */
+export async function sendIssueReport(r: IssueReport): Promise<boolean> {
+  const transport = getTransport();
+  if (!transport) return false;
+  const rows: [string, string][] = [
+    ["Reference", r.ref],
+    ["Problem code", r.code || "none"],
+    ["Area", r.area || "not given"],
+    ["Page", r.page || "not given"],
+    ["Reply to", r.email || "not given"],
+    ["Device", r.device || "not given"],
+  ];
+  const note = r.message || "No note was added.";
+  await transport.sendMail({
+    from: `RESCUEN Reports <${process.env.GMAIL_USER}>`,
+    to: process.env.CONTACT_TO || process.env.GMAIL_USER,
+    replyTo: r.email || undefined,
+    subject: `Website report ${r.ref}${r.code ? ` · ${r.code}` : ""}`,
+    text: `${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n\n${note}`,
+    html: `
+      <div style="font-family:Inter,Arial,sans-serif;max-width:620px;margin:auto;border:1px solid #e5e9f2;border-radius:16px;overflow:hidden">
+        <div style="background:${BRAND};color:#fff;padding:18px 24px;font-size:18px;font-weight:800">Website report · ${r.ref}</div>
+        <div style="padding:24px;color:#0a2540;line-height:1.6">
+          ${rows.map(([k, v]) => `<p style="margin:0 0 6px"><b>${k}:</b> ${escapeHtml(v)}</p>`).join("")}
+          <div style="margin-top:14px;background:#f1f4fa;border-radius:12px;padding:16px">${escapeHtml(note).replace(/\n/g, "<br/>")}</div>
         </div>
       </div>`,
   });
-
-  return { sent: true };
+  return true;
 }
 
 export type DonationEmailPayload = {
@@ -163,12 +216,7 @@ export type DonationEmailPayload = {
   timestamp: string;
 };
 
-/**
- * Upon verified Razorpay payment:
- *  1) If the user provided their email, sends the Official Dark-Framed Daan Receipt + Greeting
- *     email directly to `p.email.trim()` (exact screenshot style).
- *  2) Always sends an audit notification to Team RESCUEN's inbox (`rescuensupport@gmail.com`).
- */
+/** Sends the receipt to the donor (if they left an email) and a notice to the team, together. */
 export async function sendDonationEmails(
   p: DonationEmailPayload
 ): Promise<{ donorEmailSent: boolean; teamEmailSent: boolean }> {
@@ -180,7 +228,7 @@ export async function sendDonationEmails(
   const cleanDonorEmail = (p.email || "").trim();
   const hasValidDonorEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanDonorEmail);
 
-  const displayName = p.name && p.name.trim() ? p.name.trim() : "Well-Wisher";
+  const displayName = line(p.name || "", 80) || "Well-Wisher";
   const safeName = escapeHtml(displayName);
   const safeMethod = escapeHtml(p.paymentMethod.toUpperCase());
   const safeTxId = escapeHtml(p.transactionId);
@@ -192,13 +240,11 @@ export async function sendDonationEmails(
     maximumFractionDigits: 0,
   }).format(p.amount);
 
-  const logoImg = `<img src="https://rescuen-web.netlify.app/rescuen-logo.png" width="40" height="40" alt="RESCUEN" style="display:block;border-radius:10px;background:#ffffff;padding:4px" />`;
+  const logoImg = `<img src="${SITE_URL}/rescuen-logo.png" width="40" height="40" alt="RESCUEN" style="display:block;border-radius:10px;background:#ffffff;padding:4px" />`;
 
-  let donorEmailSent = false;
-  let teamEmailSent = false;
 
-  // 1) Send Official Receipt & Greeting Email to Donor ONLY IF they provided a valid email
-  if (hasValidDonorEmail) {
+  const toDonor = async () => {
+    if (!hasValidDonorEmail) return false;
     try {
       await transport.sendMail({
         from,
@@ -233,7 +279,7 @@ export async function sendDonationEmails(
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:auto;max-width:320px">
                   <tr>
                     <td style="text-align:center">
-                      <img src="https://rescuen-web.netlify.app/namaste-illustration.svg" alt="Namaste from Team RESCUEN" width="280" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:14px" />
+                      <img src="${SITE_URL}/daan/namaste-mail.jpg" alt="Namaste from Team RESCUEN" width="280" style="display:block;margin:0 auto;max-width:100%;height:auto;border-radius:14px" />
                     </td>
                   </tr>
                 </table>
@@ -306,14 +352,14 @@ export async function sendDonationEmails(
             </div>
           </div>`,
       });
-      donorEmailSent = true;
+      return true;
     } catch (err) {
-      console.error("[mailer] Failed to send donation receipt to donor:", cleanDonorEmail, err);
+      console.error("[mailer] receipt email failed:", (err as { code?: string })?.code ?? "unknown");
+      return false;
     }
-  }
+  };
 
-  // 2) Internal Audit Notification to Team RESCUEN Inbox
-  if (toTeam) {
+  const toInbox = async () => {
     try {
       await transport.sendMail({
         from,
@@ -345,11 +391,13 @@ export async function sendDonationEmails(
             </div>
           </div>`,
       });
-      teamEmailSent = true;
+      return true;
     } catch (err) {
-      console.error("[mailer] Failed to send internal donation notification:", err);
+      console.error("[mailer] team receipt notice failed:", (err as { code?: string })?.code ?? "unknown");
+      return false;
     }
-  }
+  };
 
+  const [donorEmailSent, teamEmailSent] = await Promise.all([toDonor(), toInbox()]);
   return { donorEmailSent, teamEmailSent };
 }

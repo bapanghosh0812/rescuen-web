@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import LegalShell, { type Section } from "@/components/LegalShell";
+import { pageMeta } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Refund & Cancellation Policy",
-  description: "How subscriptions, cancellations, and refunds work for RESCUEN premium features.",
-};
+  description: "How cancellations and refunds work for RESCUEN, with a summary in simple words.",
+  path: "/legal/refund",
+});
 
 const sections: Section[] = [
   {
@@ -54,6 +55,7 @@ const sections: Section[] = [
 export default function RefundPage() {
   return (
     <LegalShell
+      doc="refund"
       title="Refund & Cancellation Policy"
       updated="17 September 2026"
       intro="Clear, fair terms for subscriptions, cancellations, and refunds."

@@ -70,8 +70,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        display: ["var(--font-sora)", "var(--font-inter)", "sans-serif"],
+        sans: ["Rupee", "var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["Rupee", "var(--font-sora)", "var(--font-inter)", "sans-serif"],
       },
       boxShadow: {
         soft: "0 1px 2px rgba(10,37,64,0.04), 0 8px 24px -12px rgba(10,37,64,0.12)",

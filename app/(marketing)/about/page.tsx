@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Target, HeartHandshake, Rocket, ShieldCheck, Mail, Newspaper, Briefcase } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import Reveal from "@/components/ui/Reveal";
 
-export const metadata: Metadata = {
-  title: "About Us",
-  description: "The mission and story behind RESCUEN — building a safer world, one person at a time.",
-};
+export const metadata = pageMeta({
+  title: "About RESCUEN and Team RESCUEN",
+  description: "The story and mission of RESCUEN, a community-powered personal safety app built by Team RESCUEN in Durgapur, West Bengal, India.",
+  path: "/about",
+});
 
 const VALUES = [
   { icon: ShieldCheck, title: "Safety first, always", desc: "Every decision we make is judged by one question: does this keep our users safer?" },
@@ -91,7 +92,7 @@ export default function AboutPage() {
         <div className="container-x grid gap-6 md:grid-cols-3">
           <Anchor id="careers" icon={Briefcase} title="Careers" desc="We’re a small team with a big mission. Passionate about safety and craft?" cta="Write to us" href={`mailto:${SITE.supportEmail}?subject=Careers at RESCUEN`} />
           <Anchor id="press" icon={Newspaper} title="Press & Media" desc="For press enquiries, brand assets, or interviews, reach our team." cta="Contact press" href={`mailto:${SITE.supportEmail}?subject=Press enquiry`} />
-          <Anchor id="blog" icon={Mail} title="Blog & Updates" desc="Safety tips and product updates are coming soon. Stay tuned." cta="Get in touch" href="/#contact" />
+          <Anchor id="blog" icon={Mail} title="Safety guides" desc="We write down what we learn, so you know what to do before you need it." cta="Read the guides" href="/guides" />
         </div>
       </section>
     </div>
@@ -122,11 +123,11 @@ function Anchor({
       <h3 className="mt-4 text-lg font-bold">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-ink-faint">{desc}</p>
       {external ? (
-        <a href={href} className="mt-4 inline-block text-sm font-semibold text-brand hover:underline">
+        <a href={href} className="mt-3 inline-block py-1.5 text-sm font-semibold text-brand hover:underline">
           {cta} →
         </a>
       ) : (
-        <Link href={href} className="mt-4 inline-block text-sm font-semibold text-brand hover:underline">
+        <Link href={href} className="mt-3 inline-block py-1.5 text-sm font-semibold text-brand hover:underline">
           {cta} →
         </Link>
       )}

@@ -1,38 +1,21 @@
-"use client";
-
-import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Smartphone, ShieldCheck, Star, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowRight, BadgeCheck, KeyRound, ShieldCheck, Smartphone } from "lucide-react";
+import HeroAsk from "@/components/ai/HeroAsk";
+import Tilt from "@/components/ui/Tilt";
 import { SITE } from "@/lib/site";
 
 export default function Hero() {
-  const frameRef = useRef<HTMLDivElement>(null);
-  const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
-
-  const onMove = (e: React.MouseEvent) => {
-    const el = frameRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    setTilt({ rx: py * -6, ry: px * 8 });
-  };
-  const reset = () => setTilt({ rx: 0, ry: 0 });
-
   return (
-    <section className="relative overflow-hidden pt-32 pb-16 sm:pt-36 lg:pt-40">
-      {/* Decorative background */}
+    <section className="relative overflow-hidden pb-16 pt-32 sm:pt-36 lg:pt-40">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-dotgrid opacity-60 mask-fade-b" />
-        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand-200/35 blur-2xl" />
-        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-safe-200/30 blur-2xl" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-brand-100/40 blur-2xl" />
+        <div className="absolute -left-24 top-10 h-80 w-80 glow [--g:theme(colors.brand.200/35%)]" />
+        <div className="absolute right-0 top-40 h-96 w-96 glow [--g:theme(colors.safe.200/30%)]" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 glow [--g:theme(colors.brand.100/40%)]" />
       </div>
 
-      <div className="container-x grid items-center gap-12 lg:grid-cols-2">
-        {/* Left copy */}
+      <div className="container-x grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
         <div>
           <div className="chip">
             <span className="relative flex h-2.5 w-2.5">
@@ -42,77 +25,60 @@ export default function Hero() {
             Community-driven safety · Live on Google Play
           </div>
 
-          <h1 className="h-display mt-5 text-balance text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
-            Your 24×7 personal
-            <br />
-            safety <span className="text-gradient-brand">bodyguard.</span>
+          <h1 className="hero-title h-display mt-5 text-balance">
+            Your 24×7 personal safety <span className="text-gradient-brand">bodyguard.</span>
           </h1>
 
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-            One <b>2-second hold</b> turns your phone into an emergency broadcaster — a live{" "}
-            <b>1&nbsp;KM rescue radar</b>, silent SMS to family &amp; police, community{" "}
-            <b>Hero Mode</b>, and a multilingual <b>AI safety assistant</b>.
+            Some moments don’t give you time to explain. So we made it one simple action: hold the button for two seconds
+            and your phone starts asking for help on your behalf. People within 1 km see you on a live rescue radar, your
+            family and the police silently receive your location, nearby heroes are guided to you, and an AI safety
+            assistant stays by your side in your own language.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <HeroAsk />
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <a href={SITE.appStoreUrl} target="_blank" rel="noreferrer" className="btn-primary text-base">
-              <Smartphone className="h-5 w-5" />
+              <Smartphone className="h-5 w-5" aria-hidden="true" />
               Download on Android
             </a>
             <Link href="/#features" className="btn-ghost text-base">
-              Explore Features
-              <ArrowRight className="h-4 w-4" />
+              Explore features
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
 
-          {/* Trust row */}
-          <div className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-ink-faint">
+          <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-ink-faint">
             <span className="inline-flex items-center gap-1.5">
-              <span className="flex text-gold">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" />
-                ))}
-              </span>
-              <b className="text-ink">Loved</b> by users
+              <BadgeCheck className="h-4 w-4 text-safe-600" aria-hidden="true" /> 100% free to stay safe
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-brand" /> Encrypted &amp; private
+              <ShieldCheck className="h-4 w-4 text-brand" aria-hidden="true" /> Encrypted &amp; private
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-brand" /> No password — phone + OTP
+              <KeyRound className="h-4 w-4 text-brand" aria-hidden="true" /> No password, just phone + OTP
             </span>
           </div>
         </div>
 
-        {/* Right — premium poster with 3D tilt */}
         <div className="perspective relative flex justify-center">
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <div className="h-[80%] w-[80%] rounded-full bg-brand-300/25 blur-3xl" />
+            <div className="h-[80%] w-[80%] glow [--g:theme(colors.brand.300/25%)]" />
           </div>
-          <motion.div
-            ref={frameRef}
-            onMouseMove={onMove}
-            onMouseLeave={reset}
-            initial={{ opacity: 0, y: 40, rotateY: 8 }}
-            animate={{ opacity: 1, y: 0, rotateY: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
-              transformStyle: "preserve-3d",
-            }}
-            className="preserve-3d relative z-10 overflow-hidden rounded-[1.6rem] border border-white/60 shadow-lift ring-1 ring-brand-900/5 transition-transform duration-200 ease-out will-change-transform"
-          >
+          <Tilt className="relative z-10 overflow-hidden rounded-[1.6rem] border border-white/60 shadow-lift ring-1 ring-brand-900/5">
             <Image
-              src="/promo/promo-1.png"
-              alt="RESCUEN app — Home screen with one-tap SOS, live location and Follow-Me"
+              src="/promo/promo-1.webp"
+              alt="RESCUEN app home screen with the SOS button, live location and Follow-Me"
               width={941}
               height={1672}
               priority
-              quality={80}
-              sizes="(max-width: 640px) 280px, (max-width: 1024px) 340px, 380px"
-              className="h-[68vh] max-h-[680px] w-auto"
+              fetchPriority="high"
+              quality={75}
+              sizes="(max-width: 640px) 260px, 383px"
+              className="h-[68vh] max-h-[680px] min-h-[420px] w-auto"
             />
-          </motion.div>
+          </Tilt>
         </div>
       </div>
     </section>

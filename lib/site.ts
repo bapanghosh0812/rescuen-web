@@ -1,273 +1,46 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// RESCUEN (The Ultimate Safety) — Enterprise SEO & Master Content Control Center
-// Architect & Lead Developer: Team RESCUEN (Surakshit Bharat Mission)
-// Live Production URL: https://rescuen-web.netlify.app/
-// Everything the site renders & indexes flows reactively from this module.
-// ─────────────────────────────────────────────────────────────────────────────
+// Brand facts and page copy used across the site.
 
-export const SEO_CLUSTERS = {
-  // 1. Core Personal Safety & Platform Authority
-  coreProtection: [
-    "personal safety app",
-    "rescuen",
-    "rescuen safety app",
-    "rescuen official website",
-    "rescuen the ultimate safety",
-    "rescuen safety platform",
-    "emergency alert system",
-    "best safety platform",
-    "best personal safety app in india",
-    "top rated emergency sos app",
-    "free personal safety application android",
-    "24x7 personal bodyguard app",
-    "real time personal security companion",
-    "family safety and location tracker",
-    "community driven emergency rescue platform",
-    "all in one emergency response app",
-    "smart personal protection software",
-    "life saving mobile safety system",
-    "citizen safety network india",
-    "next gen emergency preparedness tool",
-    "instant emergency notification system",
-    "verified community rescue network",
-    "personal security shield app",
-    "digital guardian angel app",
-  ],
-
-  // 2. Danger, Crisis Management & Instant Panic Response
-  dangerAndCrisis: [
-    "stuck in danger helper",
-    "how to escape attack",
-    "instant panic button",
-    "emergency tracking online",
-    "danger location tracker",
-    "live audio video evidence broadcaster",
-    "silent sos tool",
-    "2 second panic button app",
-    "triple volume button sos trigger",
-    "locked screen emergency sos trigger",
-    "silent emergency sms sender without internet",
-    "offline sms gps coordinates broadcaster",
-    "live gps tracking during kidnapping",
-    "what to do when followed at night",
-    "how to survive a street attack",
-    "emergency help when stuck alone at night",
-    "instant police and family alert system",
-    "fake incoming call escape tool",
-    "realistic fake call generator for unsafe situations",
-    "dead mans switch safety timer app",
-    "follow me live journey monitor",
-    "automatic sos trigger if stopped moving",
-    "highway danger rescue alert app",
-    "cab ride safety tracker online",
-    "late night travel emergency companion",
-    "hostile situation silent distress signal",
-    "emergency siren alarm loud 1km alert",
-    "real time distress beacon mobile",
-    "crisis management personal defense app",
-    "medical and accident emergency sos broadcaster",
-  ],
-
-  // 3. Women Security, Anti-Rape Framework & Harassment Defense
-  womenSecurityAndRapePrevention: [
-    "women safety app india",
-    "anti rape safety framework",
-    "rape prevention application",
-    "women protection tools",
-    "safety tracker for girls",
-    "night shift women security",
-    "molestation defense app",
-    "women emergency helpline app",
-    "best app for women safety at night",
-    "sexual assault prevention technology",
-    "anti harassment emergency sos app",
-    "eve teasing and stalking protection app",
-    "college girls hostel commute safety app",
-    "working women late night cab safety tracker",
-    "female solo traveler safety app india",
-    "women helpline 1091 one tap dialer",
-    "112 india emergency women rescue integration",
-    "police 100 instant sms location alert for women",
-    "domestic violence silent help trigger",
-    "women self defense and wellness guide app",
-    "anti abduction live gps tracker for girls",
-    "school and tuition girl child safety tracker",
-    "nurse and bpo night shift safety companion",
-    "indian women security shield application",
-    "stop violence against women tech platform",
-    "zero tolerance anti rape community radar",
-    "women empowerment and digital safety armor",
-    "emergency sos for girls in distress",
-    "instant brother father family alert app for girls",
-    "safe city women protection ecosystem",
-  ],
-
-  // 4. Advanced Rescue Technology, Forensics & AI Architecture
-  advancedTechUtility: [
-    "1KM live community rescue radar",
-    "encrypted private evidence vault",
-    "court usable hazard recording",
-    "firebase safe journey engine",
-    "gemini ai safety assistant chat",
-    "geohash 1 kilometer proximity alert system",
-    "hero mode nearby volunteer rescue navigation",
-    "blue line live rescue routing to victim",
-    "write only black box audio video evidence recorder",
-    "tamper proof cloud forensic evidence storage",
-    "ai frame detection hazard camera",
-    "multilingual gemini ai crisis counselor",
-    "voice activated ai emergency sos trigger",
-    "background gps shield when app is closed",
-    "low battery smart background location broadcaster",
-    "60 day emergency contact tamper lock",
-    "passwordless phone otp firebase app check security",
-    "tls encrypted zero ad tracking safety architecture",
-    "server side proximity filtering rescue radar",
-    "indian multilingual safety app hindi bengali marathi tamil telugu",
-  ],
-
-  // 5. Geo-Targeted Indian Cities, States & Global High-Intent Searches
-  geoAndTransactionalIntents: [
-    "download rescuen app google play store",
-    "com.officialrescuen.app android download",
-    "women safety app kolkata west bengal",
-    "personal safety app durgapur asansol",
-    "women emergency app delhi ncr gurgaon noida",
-    "night safety app mumbai pune bangalore hyderabad",
-    "girls safety tracker chennai kolkata ahmedabad jaipur",
-    "student safety app kota lucknow patna bhubaneswar",
-    "best free sos app without subscription india",
-    "community driven safety platform india",
-    "advanced emergency sos architecture",
-    "indian emergency numbers 112 100 1091 108 1098 app",
-    "how to send live location to police in emergency",
-    "best alternative to bsafe Shake2Safety 112 india app",
-    "global personal safety and community watch app",
-    "instant emergency rescue app for android phones",
-  ],
-} as const;
-
-// Flattened master array of 110+ high-intent SEO keywords for Next.js Metadata API
-export const SEO_KEYWORDS: string[] = [
-  ...SEO_CLUSTERS.coreProtection,
-  ...SEO_CLUSTERS.dangerAndCrisis,
-  ...SEO_CLUSTERS.womenSecurityAndRapePrevention,
-  ...SEO_CLUSTERS.advancedTechUtility,
-  ...SEO_CLUSTERS.geoAndTransactionalIntents,
-];
+// One place to change when a custom domain is connected.
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://rescuen-web.netlify.app").replace(/\/+$/, "");
 
 export const SITE = {
   name: "RESCUEN",
-  fullName: "RESCUEN — The Ultimate Personal Safety & Women Protection Platform",
-  // Independent enterprise-grade safety platform engineered by Team RESCUEN
   legalName: "Team RESCUEN",
   owner: "Team RESCUEN",
-  ownerTitle: "Founding Team · Surakshit Bharat Mission",
-  url: "https://rescuen-web.netlify.app",
-  canonicalUrl: "https://rescuen-web.netlify.app/",
-  tagline: "The Ultimate Personal Safety Companion & Anti-Rape Emergency Shield",
-  shortDescription:
-    "RESCUEN is India's #1 community-driven personal safety, women protection, and danger response platform engineered by Team RESCUEN.",
+  url: SITE_URL,
+  tagline: "Your 24×7 personal safety companion",
   description:
-    "RESCUEN (The Ultimate Safety) is an advanced personal safety app, women protection system, and anti-rape emergency alert platform engineered by Team RESCUEN. Hold for 2 seconds to activate a 1KM live community rescue radar, silent SOS location SMS to family & police (112/100/1091), Hero Mode live navigation, write-only court-usable audio/video evidence vault, Firebase Follow-Me safe journey engine, and a 24×7 multilingual Gemini AI safety assistant.",
-  longSeoNarrative:
-    "RESCUEN (The Ultimate Safety) is a next-generation personal safety app, crisis management system, and women protection framework architected by Team RESCUEN. Built to eradicate street crimes, molestation, kidnapping, night-shift travel hazards, and sexual assault, RESCUEN transforms any smartphone into an unbreakable emergency broadcaster in 2 seconds. Whether you are a college student, working woman on a night shift, solo traveler, healthcare worker, or citizen stuck in danger, RESCUEN combines a Geohash-powered 1KM Live Community Rescue Radar, silent offline-ready SMS alerts to 5 trusted family contacts and Police (112, 100, 1091, 108), Hero Mode volunteer rescue routing, a Firebase Follow-Me dead-man's switch journey tracker, a tamper-proof write-only court-usable audio and AI-frame forensic evidence vault, Fake Call escape utility, and a calm Gemini AI safety assistant across 6 Indian languages (English, Hindi, Bengali, Marathi, Tamil, Telugu).",
+    "Hold for 2 seconds and RESCUEN alerts people within 1 km and sends your live location to family and police. A free personal safety app made in India.",
+  /** The full introduction, in our own words. */
+  story:
+    "We built RESCUEN, The Ultimate Safety, for the moment you hope never comes. It is a personal safety app, a women’s protection system and an anti-rape emergency alert platform in one, made with care by Team RESCUEN. Hold the button for two seconds and it switches on a 1 KM live community rescue radar, silently sends your location to your family and the police, and guides nearby heroes straight to you. It keeps audio and photo evidence in a vault that can’t be erased from your phone, and helplines like 112, 100 and 1091 stay one tap away. On ordinary days, Follow-Me watches over your journey home, and our multilingual AI safety assistant stays awake with you, 24×7.",
   appStoreUrl:
-    process.env.NEXT_PUBLIC_APP_STORE_URL ||
-    "https://play.google.com/store/apps/details?id=com.officialrescuen.app",
+    process.env.NEXT_PUBLIC_APP_STORE_URL || "https://play.google.com/store/apps/details?id=com.officialrescuen.app",
   packageId: "com.officialrescuen.app",
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "rescuensupport@gmail.com",
-  // Official verified RESCUEN ecosystems
   instagram: "https://www.instagram.com/hello.officialrescuen",
   whatsapp: "https://whatsapp.com/channel/0029Vb7ZOwYJ93wNB8znbq3M",
-  developerUrl: "https://rescuen-web.netlify.app/about",
-  officialPolicyUrl: "https://sites.google.com/view/rescuen-app-policy/home",
   address: "Durgapur, West Bengal – 713212, India",
-  geo: {
-    region: "IN-WB",
-    placename: "Durgapur, West Bengal, India",
-    latitude: "23.5204",
-    longitude: "87.3119",
-  },
   foundedYear: 2025,
-  keywords: SEO_KEYWORDS,
-} as const;
-
-export const PAGE_METADATA = {
-  home: {
-    title:
-      "RESCUEN — #1 Personal Safety App, Women Protection & 1KM Emergency Rescue Radar",
-    description:
-      "Official RESCUEN Safety Platform. Instant 2-sec panic button, 1KM live community rescue radar, silent SOS location tracker, anti-rape protection tools, court-usable evidence vault, Firebase safe journey engine & Gemini AI safety assistant.",
-    canonical: "https://rescuen-web.netlify.app/",
-  },
-  login: {
-    title: "Secure OTP Sign-In · RESCUEN Personal Safety & Emergency Portal",
-    description:
-      "Sign in to your RESCUEN safety account using passwordless Firebase Phone OTP or Google authentication. Protected by 60-day emergency contact lock and App Check.",
-    canonical: "https://rescuen-web.netlify.app/login",
-  },
-  about: {
-    title: "About RESCUEN · Mission for Women & Citizen Safety",
-    description:
-      "Discover how Team RESCUEN architected this platform to build a zero-tolerance anti-rape safety framework, 1KM community rescue radar, and 24×7 personal bodyguard for India and the world.",
-    canonical: "https://rescuen-web.netlify.app/about",
-  },
-  security: {
-    title: "Trust, Forensic Encryption & Women Emergency Helplines (112/1091) · RESCUEN",
-    description:
-      "Explore RESCUEN's defense-in-depth security: TLS & at-rest Firebase encryption, write-only court-usable audio/video evidence vault, server-side Geohash privacy, and one-tap Indian emergency helplines (112, 100, 1091, 108, 1098).",
-    canonical: "https://rescuen-web.netlify.app/security",
-  },
-  terms: {
-    title: "Terms & Conditions · RESCUEN Personal Safety Platform",
-    description:
-      "Read the official legal Terms & Conditions governing the RESCUEN emergency safety app, 1KM community rescue radar, and web platform.",
-    canonical: "https://rescuen-web.netlify.app/terms",
-  },
-  privacy: {
-    title: "Privacy Policy & Zero-Ad Data Protection · RESCUEN",
-    description:
-      "How RESCUEN protects your live GPS coordinates, emergency contacts, and forensic evidence vault with strict encryption, zero data selling, and a 30-day soft-delete guarantee.",
-    canonical: "https://rescuen-web.netlify.app/privacy",
-  },
-  disclaimer: {
-    title: "Emergency Service & Legal Disclaimer · RESCUEN",
-    description:
-      "Important safety and operational disclaimers regarding emergency SOS broadcasts, network availability, community Hero Mode, and official helpline usage.",
-    canonical: "https://rescuen-web.netlify.app/disclaimer",
-  },
-  refund: {
-    title: "Refund & Subscription Policy · RESCUEN",
-    description:
-      "Transparent refund and cancellation terms for RESCUEN. Core life-saving SOS, 1KM radar, Hero Mode, and AI safety features remain 100% free.",
-    canonical: "https://rescuen-web.netlify.app/refund",
-  },
-  cookies: {
-    title: "Cookie & Session Security Policy · RESCUEN",
-    description:
-      "Understand how RESCUEN uses strictly necessary authentication and security cookies with zero third-party advertising trackers.",
-    canonical: "https://rescuen-web.netlify.app/cookies",
-  },
 } as const;
 
 export type NavItem = { label: string; href: string };
 
 export const NAV: NavItem[] = [
-  { label: "Home", href: "/#home" },
   { label: "Features", href: "/#features" },
-  { label: "How it Works", href: "/#how" },
-  { label: "Security", href: "/#security" },
-  { label: "Contact", href: "/#contact" },
+  { label: "How it works", href: "/#how" },
+  { label: "AI tools", href: "/ai" },
+  { label: "Guides", href: "/guides" },
+  { label: "Security", href: "/security" },
 ];
 
-// Links inside the “⋮” (3-dot) menu — the app lives here.
+// Links inside the menu in the header.
 export const MENU_LINKS: NavItem[] = [
   { label: "Download the App", href: SITE.appStoreUrl },
+  { label: "Emergency numbers", href: "/emergency-numbers" },
   { label: "About RESCUEN", href: "/about" },
   { label: "Trust & Security Centre", href: "/security" },
   { label: "Help & Support", href: "/#contact" },
-  { label: "Terms & Conditions", href: "/legal/terms" },
   { label: "Privacy Policy", href: "/legal/privacy" },
 ];
 
@@ -282,91 +55,91 @@ export const FEATURES: Feature[] = [
   {
     icon: "ShieldAlert",
     title: "Instant SOS Panic Button",
-    desc: "Hold the panic button for 2 seconds — or triple-press the hardware volume key, even from a locked screen — to fire the full anti-attack emergency alert chain.",
+    desc: "Press and hold for two seconds and the whole emergency chain begins. If your phone is locked or in your pocket, press the volume key three times instead. We kept it this simple because nobody should have to search for a button when they’re scared.",
     accent: "sos",
   },
   {
     icon: "Radar",
     title: "1 KM Live Community Rescue Radar",
-    desc: "A high-precision Geohash radar instantly alerts every verified RESCUEN user within a 1-kilometre radius with an unignorable emergency siren and live danger coordinates.",
+    desc: "Help is often closer than we think. The moment you trigger SOS, RESCUEN users within about one kilometre hear a loud siren and see where you are, how far away you are, and how to reach you.",
     accent: "brand",
   },
   {
     icon: "Send",
-    title: "Silent SOS & Offline SMS Broadcast",
-    desc: "Dispatches a silent distress SMS containing your real-time Google Maps GPS link to up to 5 trusted family contacts and Police (100/112) — even when locked or offline.",
+    title: "Silent SOS & SMS Alerts",
+    desc: "While your screen stays quiet, RESCUEN texts your live Google Maps location to up to five people you trust and to the police. It doesn’t need mobile data, so it works where the internet doesn’t, as long as your SIM has signal.",
     accent: "brand",
   },
   {
     icon: "Users",
-    title: "Hero Mode — Community Rescue",
-    desc: "Nearby verified ‘Heroes’ view your exact distance and live ETA, tap ‘I’m going to help’, and get turn-by-turn blue-line rescue navigation straight to your location.",
+    title: "Hero Mode: Community Rescue",
+    desc: "Good people want to help. They just don’t know where to go. Hero Mode shows them your distance and arrival time, lets them tap “I’m going to help”, and leads them to you with a live route on the map.",
     accent: "safe",
   },
   {
     icon: "Route",
-    title: "Follow-Me (Firebase Safe Journey Engine)",
-    desc: "A smart dead-man’s switch that monitors night-shift commutes and cab rides; if you stop unexpectedly it asks “Are you safe?” and auto-triggers SOS if you cannot respond.",
+    title: "Follow-Me Safe Journey",
+    desc: "Think of it as a friend who stays on the line until you’re home. Start Follow-Me before a cab ride or a late walk. If you stop somewhere unexpected it asks, “Are you safe?”, and if you can’t answer, it triggers SOS for you.",
     accent: "brand",
   },
   {
     icon: "Video",
-    title: "Encrypted Private Evidence Vault",
-    desc: "On SOS, captures black-box audio and AI-detected hazard photo frames directly into write-only cloud storage — court-usable forensic proof that attackers cannot delete.",
+    title: "Private Evidence Vault",
+    desc: "When something goes wrong, proof matters. During an SOS the app records audio and photos and uploads them straight to a write-only vault. Once they’re there, nobody can open or delete them from your phone, not even someone who takes it, so they can support you with the police or in court.",
     accent: "ink",
   },
   {
     icon: "Bot",
-    title: "Gemini AI Safety Assistant Chat",
-    desc: "A 24×7 Gemini-powered multilingual crisis assistant that can trigger SOS, launch Follow-Me, guide you on how to escape an attack, and deliver calm first-aid & legal advice.",
+    title: "AI Safety Assistant",
+    desc: "Some questions can’t wait until morning. Ask in your own language and our 24×7 assistant answers calmly, whether you need first-aid steps, a way out of a tense moment or a simple explanation of your rights. It can also start SOS or Follow-Me when you ask.",
     accent: "brand",
   },
   {
     icon: "Radio",
-    title: "Background Danger Location Tracker",
-    desc: "Continues broadcasting high-accuracy live GPS telemetry even if the app is minimized or the screen is turned off — relentless protection that never sleeps.",
+    title: "Background Protection",
+    desc: "You shouldn’t have to keep an app open to be safe. During an alert RESCUEN keeps sharing your live location even when the screen is off or the app is minimised, so the people coming to help don’t lose you.",
     accent: "ink",
   },
   {
     icon: "Fingerprint",
-    title: "OTP-Verified Anti-Tamper Community",
-    desc: "Passwordless Google Sign-In + Firebase Phone OTP, fortified with a mandatory 60-day change-lock on emergency numbers so an attacker can never reroute your alerts.",
+    title: "Verified & Tamper-Locked",
+    desc: "Everyone signs in with Google and a phone OTP, so there’s no password to leak. Once you save your emergency numbers they stay locked for 60 days, which means someone who grabs your phone can’t quietly send your alerts somewhere else.",
     accent: "brand",
   },
   {
     icon: "PhoneCall",
     title: "One-Tap Women & Police Helplines",
-    desc: "Instant single-tap emergency dialing for 112 (National Emergency), 100 (Police), 1091 (Women Helpline), 108 (Ambulance), and 1098 (Child Protection).",
+    desc: "In a panic, even a three-digit number can slip your mind. So the ones that matter are always one tap away: 112 for any emergency, 100 for the police, 1091 for women, 108 for an ambulance and 1098 for children.",
     accent: "sos",
   },
   {
     icon: "HeartPulse",
-    title: "Women Protection & Self-Defense Hub",
-    desc: "Curated women-safety protocols, anti-harassment legal rights, street self-defense tactics, physical fitness, yoga, and trauma recovery guides.",
+    title: "Women Protection & Self-Defence Hub",
+    desc: "Confidence is part of safety too. Here you’ll find practical self-defence, your legal rights explained plainly, yoga and fitness, and gentle guidance for healing after something difficult.",
     accent: "safe",
   },
   {
     icon: "BatteryCharging",
-    title: "Battery-Smart Telemetry Engine",
-    desc: "Engineered with adaptive location polling to run silently in the background all day and night without draining your smartphone battery during long commutes.",
+    title: "Battery-Smart by Design",
+    desc: "A safety app is no use on a dead phone. RESCUEN changes how often it checks your location depending on what you’re doing, so it can stay with you through long days and late commutes.",
     accent: "ink",
   },
   {
     icon: "PhoneOutgoing",
     title: "Fake Call Escape Utility",
-    desc: "Trigger a hyper-realistic incoming phone call on demand to excuse yourself and slip out of an uncomfortable cab ride, stalker encounter, or unsafe environment.",
+    desc: "Sometimes all you need is a polite reason to leave. Tap once and your phone rings with a call that looks and sounds real, so you can step away from a cab, a meeting or a conversation that doesn’t feel right.",
     accent: "sos",
   },
   {
     icon: "Languages",
     title: "6 Native Indian Languages",
-    desc: "Full voice and UI support across English, हिंदी (Hindi), বাংলা (Bengali), मराठी (Marathi), தமிழ் (Tamil), and తెలుగు (Telugu) for inclusive pan-India protection.",
+    desc: "Help should come in the language you think in. RESCUEN speaks English, हिन्दी, বাংলা, मराठी, தமிழ் and తెలుగు, so your mother can use it as easily as you do.",
     accent: "safe",
   },
   {
     icon: "Lock",
-    title: "Privacy-First Zero-Ad Architecture",
-    desc: "Your live location is strictly encrypted, never monetized or shared with ad trackers, and backed by a transparent 30-day soft-delete data sovereignty policy.",
+    title: "Privacy-First, Zero Ads",
+    desc: "Your location is yours. We encrypt it while it travels and while it’s stored, we never sell it, and we don’t run ads. If you ever decide to leave, your account has a clear 30-day deletion window.",
     accent: "brand",
   },
 ];
@@ -382,19 +155,19 @@ export const HOW_STEPS = [
   {
     step: "01",
     title: "Verify with your phone",
-    desc: "Sign in with Google or your phone number + a one-time OTP — no password to remember. Verified securely by Firebase App Check.",
+    desc: "Sign in with Google or your phone number and a one-time code. There’s no password to remember, and verifying everyone helps us keep the community genuine.",
     icon: "Smartphone",
   },
   {
     step: "02",
     title: "Add your trusted circle",
-    desc: "Add up to 5 family contacts once. Emergency numbers are change-locked for 60 days to prevent tampering during a crisis.",
+    desc: "Choose up to five people who would drop everything for you. Once they’re saved, their numbers stay locked for 60 days, so nobody can change them in a bad moment.",
     icon: "Users",
   },
   {
     step: "03",
     title: "Stay protected everywhere",
-    desc: "Instant SOS, the 1 KM rescue radar, Follow-Me safe journey engine, and the Gemini AI companion run quietly in the background — ready the split-second you need them.",
+    desc: "Now go and live your day. Instant SOS, the 1 KM rescue radar, Follow-Me and the AI companion wait quietly in the background and wake up the second you need them.",
     icon: "ShieldCheck",
   },
 ];
@@ -422,36 +195,44 @@ export const TESTIMONIALS = [
 
 export const FAQS = [
   {
-    q: "Is RESCUEN completely free for women safety and emergency SOS?",
-    a: "Yes — all core life-saving features including the 2-second Instant SOS panic button, 1 KM Live Community Rescue Radar, silent SMS alerts to family & police (112/100/1091), Hero Mode rescue navigation, Follow-Me safe journey tracker, Encrypted Evidence Vault, and Gemini AI Safety Assistant are 100% free with zero hidden charges.",
+    q: "Is RESCUEN completely free?",
+    a: "Yes, and we intend to keep it that way. Every life-saving feature, from the 2-second SOS and the 1 KM rescue radar to silent SMS alerts, Hero Mode, Follow-Me, the evidence vault and the AI safety assistant, is 100% free with no hidden charges. The only thing you may ever pay is your mobile operator’s normal SMS charge, depending on your plan.",
   },
   {
-    q: "How does RESCUEN help prevent rape cases, stalking, and street attacks?",
-    a: "RESCUEN combines proactive deterrence and rapid crisis intervention: (1) Follow-Me monitors your live journey and auto-fires SOS if you are forced to stop; (2) Fake Call helps you exit suspicious cabs or stalker encounters early; (3) a 2-second hold or triple volume-key press silently alerts 5 family contacts, Police 100/112, and every verified RESCUEN Hero within 1 KM; and (4) the Encrypted Private Evidence Vault records write-only black-box audio and AI-detected hazard frames that remain court-usable even if your phone is snatched or destroyed.",
+    q: "How does RESCUEN help prevent rape, stalking and street attacks?",
+    a: "We try to help before, during and after. Before, Follow-Me keeps an eye on your journey and Fake Call gives you a way out of a cab or a conversation that feels wrong. During, a two-second hold or three presses of the volume key silently alerts up to five of your contacts, the police and RESCUEN users within about 1 km. After, the audio and photos already uploaded to the evidence vault stay safe even if your phone is snatched or broken. No app can promise to stop every crime, so please call 112 whenever you can.",
   },
   {
-    q: "What permissions does the personal safety app need, and is my location private?",
-    a: "To operate as a dependable life-saving emergency alert system, RESCUEN requires Location (all-the-time, enabling background SOS and 1 KM radar matching), SMS (for offline silent distress texts to family and police), Camera/Microphone (only during active SOS evidence recording), and Notifications. Your GPS coordinates are never sold or used for advertising — they are transmitted strictly when you activate SOS or Follow-Me.",
+    q: "How do I trigger an SOS?",
+    a: "There are three ways, so one of them is always within reach. Hold the SOS button for 2 seconds, press the volume key three times even from a locked screen, or simply ask the AI assistant inside the app.",
   },
   {
-    q: "How is my forensic evidence and personal data protected?",
-    a: "All telemetry is encrypted in transit via TLS and encrypted at rest on Google Firebase infrastructure. Authentication uses passwordless Google Sign-In and Phone OTP hardened with Firebase App Check, server-side Geohash proximity filtering, a 60-day tamper lock on emergency contacts, and a write-only cloud evidence vault that prevents attackers from deleting recorded audio or photos from your device.",
+    q: "Does the silent SOS work when my phone is locked or the internet is weak?",
+    a: "Yes, in most situations. You can trigger it from a locked screen with the volume key, and RESCUEN keeps sharing your location in the background. If mobile data drops, the alert still goes out as a silent SMS with your GPS location, as long as your SIM has signal. If there is no network at all, no app can send a message, so move towards signal, make noise and try 112.",
   },
   {
-    q: "Does the silent SOS tool work when my phone screen is locked or internet is weak?",
-    a: "Yes. You can trigger an emergency SOS directly from a locked screen, and the Background Safety Shield continuously broadcasts your live danger location. If mobile data drops during an emergency, RESCUEN automatically falls back to silent SMS broadcasting containing your exact GPS coordinates.",
+    q: "What permissions does the app need, and is my location private?",
+    a: "RESCUEN asks for location (all the time, so SOS and the radar work in the background), SMS (to alert your family and the police), camera and microphone (only during an active SOS, for evidence) and notifications (to hear alerts near you). Your location is shared only when you use a safety feature such as SOS or Follow-Me. We never sell it and never use it for advertising.",
   },
   {
-    q: "Which Indian languages does the Gemini AI Safety Assistant support?",
-    a: "RESCUEN supports six major Indian languages 24×7: English, हिंदी (Hindi), বাংলা (Bengali), मराठी (Marathi), தமிழ் (Tamil), and తెలుగు (Telugu), enabling anyone in distress to get instant crisis guidance or trigger SOS in their native tongue.",
+    q: "How are my evidence and personal data protected?",
+    a: "Everything is encrypted while it travels and where it is stored on Google’s cloud. You sign in without a password, alert distances are worked out on our servers, your emergency numbers are locked for 60 days, and the evidence vault is write-only, so what has been uploaded cannot be deleted from your phone. We don’t claim end-to-end encryption, because we would rather tell you exactly what we do.",
   },
   {
-    q: "Who developed RESCUEN and where can I download the official Android app?",
-    a: "RESCUEN (The Ultimate Safety) was architected and developed by Team RESCUEN, an independent team dedicated to personal safety from West Bengal, India. You can download the official Android application (`com.officialrescuen.app`) directly from the Google Play Store using the Download button on this website.",
+    q: "Which languages does RESCUEN support?",
+    a: "Six, day and night: English, हिन्दी, বাংলা, मराठी, தமிழ் and తెలుగు. Anyone in distress can ask for guidance or trigger SOS in the language that comes to them first.",
   },
   {
-    q: "How do I delete my account and personal safety data if needed?",
-    a: "You have full data sovereignty. You can request account deletion anytime inside the RESCUEN app or via support email — your account enters a secure 30-day soft-delete grace period to prevent coerced deletion by an attacker, after which all personal records are permanently purged.",
+    q: "Who made RESCUEN, and where can I download it?",
+    a: "RESCUEN, The Ultimate Safety, is designed and built by Team RESCUEN, an independent team from Durgapur, West Bengal. You can download the official Android app (com.officialrescuen.app) from Google Play using the button on this page. Please don’t install it from anywhere else.",
+  },
+  {
+    q: "Does RESCUEN replace the police or 112?",
+    a: "No. RESCUEN stands beside official services and never in place of them. If you can make a call, call 112 first and let RESCUEN do the rest.",
+  },
+  {
+    q: "How do I delete my account and data?",
+    a: "Your data belongs to you. You can ask for deletion inside the app or by email at any time. Your account first enters a 30-day grace period, which protects you if somebody forces you to delete it, and after that your personal records are removed for good, except where the law requires us to keep something.",
   },
 ];
 
@@ -460,20 +241,30 @@ export const FOOTER_GROUPS: { title: string; links: NavItem[] }[] = [
     title: "Product",
     links: [
       { label: "Features", href: "/#features" },
-      { label: "How it Works", href: "/#how" },
+      { label: "How it works", href: "/#how" },
       { label: "Download on Android", href: SITE.appStoreUrl },
+      { label: "AI tools", href: "/ai" },
+      { label: "Support the mission", href: "/donate" },
+    ],
+  },
+  {
+    title: "Stay safe",
+    links: [
+      { label: "Safety guides", href: "/guides" },
+      { label: "Emergency numbers", href: "/emergency-numbers" },
+      { label: "Safety Planner", href: "/ai#planner" },
+      { label: "Safety Check", href: "/ai#check" },
       { label: "Trust & Security", href: "/security" },
-      { label: "AI Assistant", href: "/#ai" },
     ],
   },
   {
     title: "Company",
     links: [
       { label: "About RESCUEN", href: "/about" },
-      { label: "Contact", href: "/#contact" },
-      { label: "Our Story", href: "/about" },
       { label: "Press & Media", href: "/about#press" },
-      { label: "Blog", href: "/about#blog" },
+      { label: "Contact", href: "/#contact" },
+      { label: "WhatsApp Channel", href: SITE.whatsapp },
+      { label: "Instagram", href: SITE.instagram },
     ],
   },
   {
@@ -484,16 +275,6 @@ export const FOOTER_GROUPS: { title: string; links: NavItem[] }[] = [
       { label: "Disclaimer", href: "/legal/disclaimer" },
       { label: "Refund Policy", href: "/legal/refund" },
       { label: "Cookie Policy", href: "/legal/cookies" },
-    ],
-  },
-  {
-    title: "Support",
-    links: [
-      { label: "Help Centre", href: "/#contact" },
-      { label: "Report an Issue", href: "/#contact" },
-      { label: "Emergency Numbers (112/1091)", href: "/security#emergency" },
-      { label: "WhatsApp Channel", href: SITE.whatsapp },
-      { label: "Instagram", href: SITE.instagram },
     ],
   },
 ];

@@ -1,106 +1,73 @@
 import "server-only";
 import crypto from "crypto";
+import { getStore } from "@netlify/blobs";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Enterprise Donation Security & Cryptographic Integrity Engine
-// Protects Team RESCUEN's donation flow against tampering, replay attacks,
-// forged callbacks, and timing side-channels.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const SECRET_SEED =
-  process.env.RAZORPAY_KEY_SECRET ||
-  process.env.GMAIL_APP_PASSWORD ||
-  process.env.FIREBASE_ADMIN_PRIVATE_KEY ||
-  "rescuen-enterprise-hmac-fallback-2026-shield";
-
-// Replay protection cache (bounded in-memory store for serverless instances)
-const processedTransactions = new Set<string>();
-const MAX_CACHE_SIZE = 5000;
-
-export function isTransactionProcessed(txId: string): boolean {
-  return processedTransactions.has(txId.trim().toUpperCase());
-}
-
-export function markTransactionProcessed(txId: string): void {
-  if (processedTransactions.size >= MAX_CACHE_SIZE) {
-    const firstKey = processedTransactions.values().next().value;
-    if (firstKey) processedTransactions.delete(firstKey);
-  }
-  processedTransactions.add(txId.trim().toUpperCase());
-}
-
-export type SignedOrderPayload = {
-  orderRef: string;
-  amount: number;
+export type SignedOrder = {
+  orderId: string;
   email: string;
   name: string;
+  message: string;
   exp: number;
 };
 
-/**
- * Creates a tamper-proof HMAC-SHA256 signed token binding the exact donation
- * amount, donor email, and order reference.
- */
-export function signOrderToken(payload: SignedOrderPayload): string {
-  const data = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
-  const sig = crypto.createHmac("sha256", SECRET_SEED).update(data).digest("base64url");
-  return `${data}.${sig}`;
+/** Signing key derived from the payment secret. No secret means no tokens: there is no fallback. */
+function signingKey(): Buffer {
+  const secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!secret) throw new Error("payment secret missing");
+  return crypto.createHmac("sha256", secret).update("rescuen:order-token:v2").digest();
 }
 
-/**
- * Verifies a signed order token in constant time (timingSafeEqual) and checks expiry.
- */
-export function verifyOrderToken(token: string): SignedOrderPayload | null {
+function safeEqual(a: string, b: string) {
+  const x = Buffer.from(a, "utf8");
+  const y = Buffer.from(b, "utf8");
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+}
+
+/** Binds the donor's details to one Razorpay order so they cannot be swapped later. */
+export function signOrderToken(payload: SignedOrder): string {
+  const data = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+  return `${data}.${crypto.createHmac("sha256", signingKey()).update(data).digest("base64url")}`;
+}
+
+export function verifyOrderToken(token: string): SignedOrder | null {
   try {
-    const parts = token.split(".");
-    if (parts.length !== 2) return null;
-    const [data, providedSig] = parts;
-    const expectedSig = crypto.createHmac("sha256", SECRET_SEED).update(data).digest("base64url");
-
-    const bufA = Buffer.from(providedSig, "utf8");
-    const bufB = Buffer.from(expectedSig, "utf8");
-    if (bufA.length !== bufB.length || !crypto.timingSafeEqual(bufA, bufB)) {
-      return null;
-    }
-
-    const decoded = JSON.parse(Buffer.from(data, "base64url").toString("utf8")) as SignedOrderPayload;
-    if (!decoded || typeof decoded.exp !== "number" || Date.now() > decoded.exp) {
-      return null;
-    }
-    return decoded;
+    const [data, sig, extra] = token.split(".");
+    if (!data || !sig || extra !== undefined) return null;
+    if (!safeEqual(sig, crypto.createHmac("sha256", signingKey()).update(data).digest("base64url"))) return null;
+    const p = JSON.parse(Buffer.from(data, "base64url").toString("utf8")) as SignedOrder;
+    return typeof p.exp === "number" && Date.now() <= p.exp && typeof p.orderId === "string" ? p : null;
   } catch {
     return null;
   }
 }
 
+export function verifyRazorpaySignature(orderId: string, paymentId: string, signature: string, secret: string) {
+  return safeEqual(signature, crypto.createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex"));
+}
+
+const seen = new Set<string>();
+
 /**
- * Constant-time verification of Razorpay HMAC-SHA256 payment signature.
+ * Claims a payment so its receipt can be issued exactly once. Uses Netlify's
+ * shared store when available; otherwise falls back to this instance's memory.
  */
-export function verifyRazorpaySignature(
-  orderId: string,
-  paymentId: string,
-  signature: string,
-  secret: string
-): boolean {
+export async function claimPayment(paymentId: string): Promise<boolean> {
+  if (seen.has(paymentId)) return false;
+  if (seen.size > 5000) seen.clear();
+  seen.add(paymentId);
   try {
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(`${orderId}|${paymentId}`)
-      .digest("hex");
-    const bufA = Buffer.from(signature, "utf8");
-    const bufB = Buffer.from(expected, "utf8");
-    return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+    const { modified } = await getStore({ name: "receipts", consistency: "strong" }).setJSON(
+      paymentId,
+      { at: new Date().toISOString() },
+      { onlyIfNew: true }
+    );
+    return modified;
   } catch {
-    return false;
+    return true;
   }
 }
 
 export function generateReceiptId(): string {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const rand = crypto.randomBytes(3).toString("hex").toUpperCase();
-  return `RES-DAAN-${yyyy}${mm}${dd}-${rand}`;
+  const day = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }).replace(/-/g, "");
+  return `RES-DAAN-${day}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 }
-

@@ -1,284 +1,91 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Sora } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
-import { SITE, SEO_KEYWORDS, PAGE_METADATA, FAQS } from "@/lib/site";
+import { jsonLd, pageMeta } from "@/lib/seo";
+import { SITE } from "@/lib/site";
 
-const inter = Inter({
-  subsets: ["latin"],
+// Kept in the project, so building never depends on another website.
+const inter = localFont({
+  src: "./fonts/inter-latin.woff2",
+  weight: "100 900",
   variable: "--font-inter",
-  display: "swap",
+  // Body text never jumps: if the font is late, this visit uses the phone's own.
+  display: "optional",
+  adjustFontFallback: false,
+  fallback: ["system-ui", "Segoe UI", "Roboto", "Noto Sans", "sans-serif"],
 });
-const sora = Sora({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+const sora = localFont({
+  src: "./fonts/sora-latin.woff2",
+  weight: "100 800",
   variable: "--font-sora",
   display: "swap",
+  adjustFontFallback: false,
+  fallback: ["Sora Swap", "Sora Swap R", "system-ui", "Noto Sans", "sans-serif"],
 });
 
+const HOME_TITLE = "RESCUEN: Personal Safety & Women Safety SOS App";
+
 export const metadata: Metadata = {
+  ...pageMeta({ title: HOME_TITLE, description: SITE.description, path: "/" }),
   metadataBase: new URL(SITE.url),
-  title: {
-    default: PAGE_METADATA.home.title,
-    template: `%s · ${SITE.name} (The Ultimate Safety)`,
-  },
-  description: SITE.description,
-  keywords: SEO_KEYWORDS,
+  title: { default: HOME_TITLE, template: `%s | ${SITE.name}` },
   applicationName: SITE.name,
-  authors: [
-    {
-      name: SITE.owner,
-      url: SITE.developerUrl,
-    },
-    {
-      name: SITE.legalName,
-      url: SITE.canonicalUrl,
-    },
-  ],
   creator: SITE.owner,
-  publisher: SITE.legalName,
-  category: "SafetyAndRescueApplication",
-  classification: "Personal Safety, Women Protection, Anti-Rape & Emergency SOS Platform",
-  alternates: {
-    canonical: SITE.canonicalUrl,
-    languages: {
-      "en-IN": SITE.canonicalUrl,
-      "en-US": SITE.canonicalUrl,
-      "hi-IN": SITE.canonicalUrl,
-      "bn-IN": SITE.canonicalUrl,
-    },
-  },
-  openGraph: {
-    title: PAGE_METADATA.home.title,
-    description: SITE.description,
-    url: SITE.canonicalUrl,
-    type: "website",
-    siteName: SITE.fullName,
-    locale: "en_IN",
-    images: [
-      {
-        url: `${SITE.url}/promo/promo-1.png`,
-        width: 941,
-        height: 1672,
-        alt: "RESCUEN — #1 Personal Safety App, 1KM Live Rescue Radar & Silent SOS Tool",
-      },
-      {
-        url: `${SITE.url}/logo.png`,
-        width: 512,
-        height: 512,
-        alt: "RESCUEN Official Shield Logo",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: PAGE_METADATA.home.title,
-    description: SITE.description,
-    creator: "@hello.officialrescuen",
-    images: [`${SITE.url}/promo/promo-1.png`],
-  },
+  publisher: SITE.owner,
+  category: "Safety",
   robots: {
     index: true,
     follow: true,
-    nocache: false,
-    googleBot: {
-      index: true,
-      follow: true,
-      noimageindex: false,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
   },
-  icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
-  },
-  other: {
-    "geo.region": SITE.geo.region,
-    "geo.placename": SITE.geo.placename,
-    "geo.position": `${SITE.geo.latitude};${SITE.geo.longitude}`,
-    ICBM: `${SITE.geo.latitude}, ${SITE.geo.longitude}`,
-    "mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-title": SITE.name,
-  },
+  appleWebApp: { capable: true, title: SITE.name, statusBarStyle: "default" },
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#004aad",
   width: "device-width",
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const structuredDataGraph = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        "@id": `${SITE.url}/#software-application`,
-        name: SITE.name,
-        alternateName: [
-          "RESCUEN — The Ultimate Safety",
-          "RESCUEN Personal Safety App",
-          "RESCUEN Women Protection & SOS Radar",
-        ],
-        url: SITE.canonicalUrl,
-        installUrl: SITE.appStoreUrl,
-        downloadUrl: SITE.appStoreUrl,
-        applicationCategory: "SafetyAndRescueApplication",
-        applicationSubCategory:
-          "Personal Safety, Women Security, Anti-Rape Prevention & Emergency SOS System",
-        operatingSystem: "Android, Web",
-        softwareVersion: "2.0.0",
-        inLanguage: ["en", "hi", "bn", "mr", "ta", "te"],
-        isAccessibleForFree: true,
-        description: SITE.longSeoNarrative,
-        featureList: [
-          "2-Second Instant Panic Button & Triple Volume Key SOS Trigger",
-          "1KM Live Community Rescue Radar with Geohash Proximity Siren",
-          "Silent SOS & Offline SMS Location Broadcaster to Family & Police (112/100/1091)",
-          "Hero Mode Real-Time Volunteer Rescue Navigation",
-          "Follow-Me Dead-Man's Switch (Firebase Safe Journey Engine)",
-          "Encrypted Private Write-Only Audio & AI Frame Court-Usable Evidence Vault",
-          "24x7 Multilingual Gemini AI Safety Assistant Chat",
-          "Background Danger Location Tracker & Fake Call Escape Tool",
-        ],
-        screenshot: [
-          `${SITE.url}/promo/promo-1.png`,
-          `${SITE.url}/1KM_sos-alert.jpeg`,
-          `${SITE.url}/sos_trigger.png`,
-          `${SITE.url}/AI_help_center.jpeg`,
-        ],
-        offers: {
-          "@type": "Offer",
-          price: "0",
-          priceCurrency: "INR",
-          availability: "https://schema.org/InStock",
-          url: SITE.appStoreUrl,
-        },
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "4.9",
-          bestRating: "5",
-          worstRating: "1",
-          ratingCount: "1250",
-        },
-        author: {
-          "@id": `${SITE.url}/#team-rescuen`,
-        },
-        creator: {
-          "@id": `${SITE.url}/#team-rescuen`,
-        },
-        publisher: {
-          "@id": `${SITE.url}/#organization`,
-        },
+const graph = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE.url}/#organization`,
+      name: SITE.name,
+      alternateName: ["Team RESCUEN", "Rescuen Safety App"],
+      url: `${SITE.url}/`,
+      logo: { "@type": "ImageObject", url: `${SITE.url}/icons/icon-512.png`, width: 512, height: 512 },
+      foundingDate: String(SITE.foundedYear),
+      email: SITE.supportEmail,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Durgapur",
+        addressRegion: "West Bengal",
+        postalCode: "713212",
+        addressCountry: "IN",
       },
-      {
-        "@type": "Organization",
-        "@id": `${SITE.url}/#organization`,
-        name: SITE.name,
-        legalName: SITE.legalName,
-        url: SITE.canonicalUrl,
-        logo: {
-          "@type": "ImageObject",
-          url: `${SITE.url}/logo.png`,
-          width: 512,
-          height: 512,
-        },
-        foundingDate: "2025",
-        founder: {
-          "@id": `${SITE.url}/#team-rescuen`,
-        },
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: "Durgapur",
-          addressRegion: "West Bengal",
-          postalCode: "713212",
-          addressCountry: "IN",
-        },
-        sameAs: [
-          SITE.instagram,
-          SITE.whatsapp,
-          SITE.developerUrl,
-          SITE.appStoreUrl,
-          SITE.officialPolicyUrl,
-        ],
-        contactPoint: [
-          {
-            "@type": "ContactPoint",
-            contactType: "customer support & emergency platform inquiries",
-            email: SITE.supportEmail,
-            areaServed: ["IN", "Global"],
-            availableLanguage: ["en", "hi", "bn", "mr", "ta", "te"],
-          },
-        ],
-      },
-      {
-        "@type": "Person",
-        "@id": `${SITE.url}/#team-rescuen`,
-        name: "Team RESCUEN",
-        jobTitle: "Founding Team & Lead Architects of RESCUEN",
-        description:
-          "Team RESCUEN is the founding and engineering group behind RESCUEN (The Ultimate Safety), India's community-driven personal safety, women protection, and emergency SOS ecosystem.",
-        url: SITE.developerUrl,
-        nationality: {
-          "@type": "Country",
-          name: "India",
-        },
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: "Durgapur",
-          addressRegion: "West Bengal",
-          postalCode: "713212",
-          addressCountry: "IN",
-        },
-        knowsAbout: [
-          "Personal Safety Systems",
-          "Emergency SOS Architecture",
-          "Women Protection & Anti-Rape Frameworks",
-          "Next.js & TypeScript Engineering",
-          "Firebase Real-Time Geohash Radar Systems",
-          "Gemini AI Safety Agents",
-        ],
-        sameAs: [SITE.developerUrl, SITE.instagram, SITE.whatsapp],
-      },
-      {
-        "@type": "WebSite",
-        "@id": `${SITE.url}/#website`,
-        url: SITE.canonicalUrl,
-        name: SITE.fullName,
-        description: SITE.description,
-        publisher: {
-          "@id": `${SITE.url}/#organization`,
-        },
-        creator: {
-          "@id": `${SITE.url}/#team-rescuen`,
-        },
-        inLanguage: "en-IN",
-      },
-      {
-        "@type": "FAQPage",
-        "@id": `${SITE.url}/#faq`,
-        mainEntity: FAQS.map((faq) => ({
-          "@type": "Question",
-          name: faq.q,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: faq.a,
-          },
-        })),
-      },
-    ],
-  };
+      sameAs: [SITE.instagram, SITE.whatsapp, SITE.appStoreUrl],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE.url}/#website`,
+      url: `${SITE.url}/`,
+      name: SITE.name,
+      alternateName: ["Rescuen", "RESCUEN App", "RESCUEN Safety App"],
+      publisher: { "@id": `${SITE.url}/#organization` },
+      inLanguage: "en-IN",
+    },
+  ],
+};
 
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sora.variable}`}>
+    <html lang="en-IN" className={`${inter.variable} ${sora.variable}`}>
       <body className="min-h-screen bg-canvas text-ink">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredDataGraph) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(graph) }} />
         {children}
       </body>
     </html>

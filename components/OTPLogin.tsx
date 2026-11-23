@@ -3,22 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Phone,
-  ShieldCheck,
-  Loader2,
-  ArrowLeft,
-  CheckCircle2,
-  KeyRound,
-  Info,
-} from "lucide-react";
-import {
-  isFirebaseConfigured,
-  createRecaptcha,
-  sendOtp,
-  type ConfirmationResult,
-} from "@/lib/firebase.client";
+import { ArrowLeft, CheckCircle2, KeyRound, Loader2, Phone, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+import { openAssistant } from "@/components/feedback/bus";
+import { post, type Problem } from "@/components/feedback/api";
+import ProblemNotice from "@/components/feedback/ProblemNotice";
+import type { ConfirmationResult } from "@/lib/firebase.client";
 import { SITE } from "@/lib/site";
 
 const COUNTRIES = [
@@ -37,15 +26,15 @@ export default function OTPLogin() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [problem, setProblem] = useState<Problem | null>(null);
+  const error = !!problem;
+  const setError = (message: string, code = "E-AUTH-FORM") => setProblem(message ? { message, code } : null);
   const [resendIn, setResendIn] = useState(0);
   const [verifiedPhone, setVerifiedPhone] = useState("");
-  const [serverVerified, setServerVerified] = useState<boolean | null>(null);
   const [shake, setShake] = useState(false);
 
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const demo = !isFirebaseConfigured;
 
   const fullNumber = useMemo(() => `${cc}${phone.replace(/\D/g, "")}`, [cc, phone]);
 
@@ -85,25 +74,20 @@ export default function OTPLogin() {
     e?.preventDefault();
     setError("");
     const digits = phone.replace(/\D/g, "");
-    if (digits.length < 7) {
+    if (digits.length < 7 || digits.length > 14) {
       setError("Please enter a valid phone number.");
       return;
     }
     setLoading(true);
     try {
-      if (demo) {
-        await new Promise((r) => setTimeout(r, 700));
-      } else {
-        const verifier = createRecaptcha("recaptcha-container");
-        if (!verifier) throw new Error("Verification unavailable.");
-        confirmationRef.current = await sendOtp(fullNumber, verifier);
-      }
+      const { sendOtp } = await import("@/lib/firebase.client");
+      confirmationRef.current = await sendOtp(fullNumber, "recaptcha-container");
       setStep("otp");
       setResendIn(36);
       setOtp(Array(6).fill(""));
       setTimeout(() => otpRefs.current[0]?.focus(), 120);
     } catch (err: unknown) {
-      setError(friendlyError(err));
+      setProblem(friendlyError(err));
     } finally {
       setLoading(false);
     }
@@ -145,40 +129,17 @@ export default function OTPLogin() {
     setLoading(true);
     setError("");
     try {
-      let idToken = "";
-      if (demo) {
-        await new Promise((r) => setTimeout(r, 800));
-        if (code !== "123456") {
-          setError("Demo code is 123456. (Live SMS activates once Firebase is fully set up.)");
-          setLoading(false);
-          triggerShake();
-          setOtp(Array(6).fill(""));
-          otpRefs.current[0]?.focus();
-          return;
-        }
-      } else {
-        if (!confirmationRef.current) throw new Error("Session expired. Please resend the code.");
-        const cred = await confirmationRef.current.confirm(code);
-        idToken = await cred.user.getIdToken();
+      if (!confirmationRef.current) throw Object.assign(new Error("expired"), { code: "auth/code-expired" });
+      const cred = await confirmationRef.current.confirm(code);
+      const checked = await post("/api/verify-token", { idToken: await cred.user.getIdToken() });
+      if (!checked.ok) {
+        setProblem(checked.problem);
+        return;
       }
-
-      if (idToken) {
-        try {
-          const res = await fetch("/api/verify-token", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idToken }),
-          });
-          setServerVerified(res.ok);
-        } catch {
-          setServerVerified(false);
-        }
-      }
-
       setVerifiedPhone(fullNumber);
       setStep("success");
     } catch (err: unknown) {
-      setError(friendlyError(err));
+      setProblem(friendlyError(err));
       triggerShake();
       setOtp(Array(6).fill(""));
       otpRefs.current[0]?.focus();
@@ -193,9 +154,9 @@ export default function OTPLogin() {
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#070b16] px-5 py-12">
       {/* Ambient luxury background */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-24 top-10 h-96 w-96 rounded-full bg-brand-700/40 blur-3xl" />
-        <div className="absolute -right-16 bottom-0 h-96 w-96 rounded-full bg-gold-600/20 blur-3xl" />
-        <div className="absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-500/10 blur-3xl" />
+        <div className="absolute -left-24 top-10 h-96 w-96 glow [--g:theme(colors.brand.700/40%)]" />
+        <div className="absolute -right-16 bottom-0 h-96 w-96 glow [--g:theme(colors.gold.600/20%)]" />
+        <div className="absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 glow [--g:theme(colors.gold.500/10%)]" />
         <div
           className="absolute inset-0 opacity-[0.06]"
           style={{
@@ -214,40 +175,30 @@ export default function OTPLogin() {
         {/* Brand */}
         <Link href="/" className="relative flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-white">
-            <Image src="/rescuen-logo.png" alt="RESCUEN" width={24} height={24} className="object-contain" />
+            <Image src="/rescuen-logo.png" alt="" width={24} height={24} className="object-contain" />
           </span>
-          <span className="font-display text-lg font-extrabold tracking-tight text-white">
+          <span data-no-translate className="font-display text-lg font-extrabold tracking-tight text-white">
             RESCU<span className="text-gold-400">EN</span>
           </span>
         </Link>
 
-        {demo && step !== "success" && (
-          <div className="relative mt-5 flex items-start gap-2 rounded-2xl border border-gold-500/30 bg-gold-500/10 px-4 py-3 text-xs text-gold-100">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-gold-300" />
-            <span>
-              <b>Demo mode.</b> Firebase keys not detected — use code <b>123456</b> to try the flow.
-              It goes fully live once your keys are set.
-            </span>
-          </div>
-        )}
-
-        <AnimatePresence mode="wait">
           {/* ── PHONE ── */}
           {step === "phone" && (
-            <motion.div key="phone" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} className="relative mt-7">
+            <div className="menu-pop relative mt-7">
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gold-gradient text-ink shadow-gold">
                 <Phone className="h-5 w-5" />
               </div>
               <h1 className="mt-4 font-display text-2xl font-extrabold text-white sm:text-3xl">
                 Welcome to <span className="text-gold-400">RESCUEN</span>
               </h1>
-              <p className="mt-1.5 text-sm text-white/55">
+              <p className="mt-1.5 text-sm text-white/70">
                 Enter your phone number — we’ll text you a secure code.
               </p>
 
               <form onSubmit={startOtp} className="mt-7 space-y-5">
                 <div className="flex gap-2">
                   <select
+                    aria-label="Country code"
                     value={cc}
                     onChange={(e) => setCc(e.target.value)}
                     className="rounded-xl border border-white/10 bg-white/5 px-3 py-3.5 text-sm font-semibold text-white outline-none focus:border-gold-400 [&>option]:text-ink"
@@ -259,7 +210,8 @@ export default function OTPLogin() {
                   <div className="relative flex-1">
                     <input
                       inputMode="numeric"
-                      autoComplete="tel"
+                      autoComplete="tel-national"
+                      aria-label="Phone number"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/[^\d\s]/g, ""))}
                       placeholder="98765 43210"
@@ -269,23 +221,35 @@ export default function OTPLogin() {
                   </div>
                 </div>
 
-                {error && <p className="text-sm font-medium text-sos-300">{error}</p>}
+                {problem && <ProblemNotice dark problem={problem} area="Sign in" />}
 
                 <button type="submit" disabled={loading} className="btn-gold w-full text-base disabled:opacity-70">
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send OTP"}
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Sending" /> : "Send code"}
                 </button>
 
-                <p className="flex items-center justify-center gap-1.5 text-xs text-white/45">
-                  <ShieldCheck className="h-3.5 w-3.5 text-gold-400" /> Secured by Firebase · invisible reCAPTCHA
+                <div className="grid grid-cols-2 gap-2.5">
+                  <a href={SITE.appStoreUrl} target="_blank" rel="noreferrer" className="btn border border-white/15 bg-white/5 px-3 py-3 text-xs text-white hover:bg-white/10">
+                    <Smartphone className="h-4 w-4" aria-hidden="true" /> Use the app
+                  </a>
+                  <button type="button" onClick={() => openAssistant({ question: "I can’t sign in" })} className="btn border border-white/15 bg-white/5 px-3 py-3 text-xs text-white hover:bg-white/10">
+                    <Sparkles className="h-4 w-4 text-gold-400" aria-hidden="true" /> Get help
+                  </button>
+                </div>
+
+                <p className="flex items-center justify-center gap-1.5 text-xs text-white/60">
+                  <ShieldCheck className="h-3.5 w-3.5 text-gold-400" aria-hidden="true" /> Private and encrypted. No password needed.
                 </p>
               </form>
-            </motion.div>
+            </div>
           )}
 
           {/* ── OTP (video style) ── */}
           {step === "otp" && (
-            <motion.div key="otp" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} className="relative mt-7 text-center">
-              <button onClick={() => setStep("phone")} className="absolute -top-1 left-0 inline-flex items-center gap-1 text-xs font-semibold text-white/50 hover:text-white">
+            <div className="menu-pop relative mt-7 text-center">
+              <button onClick={() => {
+                  setProblem(null);
+                  setStep("phone");
+                }} className="absolute -top-1 left-0 inline-flex items-center gap-1 text-xs font-semibold text-white/50 hover:text-white">
                 <ArrowLeft className="h-4 w-4" /> Back
               </button>
 
@@ -295,7 +259,7 @@ export default function OTPLogin() {
               <h1 className="mt-4 font-display text-2xl font-extrabold text-white sm:text-3xl">
                 Verify <span className="text-gold-400">OTP</span>
               </h1>
-              <p className="mt-1.5 text-sm text-white/55">
+              <p className="mt-1.5 text-sm text-white/70">
                 Enter the 6-digit code sent to <b className="text-white/80">{fullNumber}</b>
               </p>
 
@@ -331,9 +295,9 @@ export default function OTPLogin() {
                   })}
                 </div>
 
-                {error && <p className="mt-4 text-sm font-medium text-sos-300">{error}</p>}
+                {problem && <ProblemNotice dark problem={problem} area="Sign in code" className="mt-4" />}
 
-                <p className="mt-5 text-xs text-white/45">
+                <p className="mt-5 text-xs text-white/60">
                   Didn’t receive the code?{" "}
                   {resendIn > 0 ? (
                     <span className="text-white/70">Resend in {mmss}</span>
@@ -352,34 +316,20 @@ export default function OTPLogin() {
                   )}
                 </button>
 
-                <p className="mt-3 text-center text-[11px] text-white/40">
-                  📲 On your phone, the code is detected &amp; filled automatically.
-                </p>
               </form>
-            </motion.div>
+            </div>
           )}
 
           {/* ── SUCCESS ── */}
           {step === "success" && (
-            <motion.div key="ok" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="relative mt-8 text-center">
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, delay: 0.05 }}
-                className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gold-gradient text-ink shadow-gold"
-              >
+            <div className="menu-pop relative mt-8 text-center">
+              <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gold-gradient text-ink shadow-gold">
                 <CheckCircle2 className="h-10 w-10" />
-              </motion.span>
-              <h1 className="mt-6 font-display text-2xl font-extrabold text-white sm:text-3xl">You’re verified! 🎉</h1>
+              </span>
+              <h1 className="mt-6 font-display text-2xl font-extrabold text-white sm:text-3xl">You’re verified</h1>
               <p className="mt-2 text-white/60">
                 Signed in as <b className="text-white">{verifiedPhone}</b>
               </p>
-              {serverVerified !== null && (
-                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
-                  <ShieldCheck className="h-3.5 w-3.5 text-gold-400" />
-                  {serverVerified ? "Confirmed on secured backend" : "Verified on device"}
-                </p>
-              )}
               <div className="mt-8 flex flex-col gap-3">
                 <a href={SITE.appStoreUrl} target="_blank" rel="noreferrer" className="btn-gold w-full text-base">
                   Continue to the App
@@ -388,12 +338,11 @@ export default function OTPLogin() {
                   Back to Home
                 </Link>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
         {step !== "success" && (
-          <p className="relative mt-7 text-center text-[11px] text-white/40">
+          <p className="relative mt-7 text-center text-[11px] text-white/60">
             By continuing you agree to our{" "}
             <Link href="/legal/terms" className="font-semibold text-white/60 hover:text-gold-400">Terms</Link> &amp;{" "}
             <Link href="/legal/privacy" className="font-semibold text-white/60 hover:text-gold-400">Privacy</Link>.
@@ -406,25 +355,21 @@ export default function OTPLogin() {
   );
 }
 
-function friendlyError(err: unknown): string {
-  const code = (err as { code?: string })?.code || "";
-  const map: Record<string, string> = {
-    "auth/invalid-phone-number": "That phone number doesn’t look right.",
-    "auth/too-many-requests": "Too many attempts. Please wait a while and try again.",
-    "auth/invalid-verification-code": "Incorrect code. Please check and try again.",
-    "auth/code-expired": "The code expired. Please resend a new one.",
-    "auth/quota-exceeded": "SMS limit reached. Please try again later.",
-    "auth/captcha-check-failed": "Verification failed. Please refresh and try again.",
-    "auth/billing-not-enabled":
-      "Real SMS needs the Firebase Blaze plan. Tip: add a test phone number in Firebase to try it free.",
-    "auth/operation-not-allowed":
-      "SMS for your region isn’t enabled yet. (Enable it in Firebase → Authentication → Settings → SMS region policy.)",
-    "auth/admin-restricted-operation":
-      "Phone sign-in is restricted. Please enable it in Firebase Authentication settings.",
+/** Turns any sign-in failure into plain words. Technical details never reach the page. */
+function friendlyError(err: unknown): Problem {
+  const raw = (err as { code?: string })?.code || "";
+  const code = `E-AUTH-${raw.replace(/^auth\//, "").replace(/[^a-z0-9]+/gi, "-").toUpperCase().slice(0, 26) || "OTHER"}`;
+  const words: Record<string, string> = {
+    "auth/invalid-phone-number": "That phone number doesn’t look right. Please check it and try again.",
+    "auth/missing-phone-number": "Please enter your phone number.",
+    "auth/too-many-requests": "You’ve tried a few times. Please wait a little and try again.",
+    "auth/invalid-verification-code": "That code isn’t right. Please check the SMS and try again.",
+    "auth/code-expired": "That code has expired. Please request a new one.",
+    "auth/network-request-failed": "You seem to be offline. Please check your connection and try again.",
+    "auth/captcha-check-failed": "We couldn’t confirm this device. Please refresh the page and try again.",
   };
-  if (map[code]) return map[code];
-  const msg = (err as { message?: string })?.message || "";
-  if (/region/i.test(msg))
-    return "SMS for your region isn’t enabled yet. Enable it in Firebase → Authentication → Settings → SMS region policy.";
-  return msg && !msg.includes("Firebase") ? msg : "Something went wrong. Please try again.";
+  return {
+    message: words[raw] || "Website sign-in is taking a short break. Your RESCUEN app works as usual.",
+    code,
+  };
 }

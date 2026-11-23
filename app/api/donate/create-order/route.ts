@@ -1,123 +1,83 @@
-import { NextResponse } from "next/server";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import { z } from "zod";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { signOrderToken } from "@/lib/donation-security";
+import { fail, guard, json } from "@/lib/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const createOrderSchema = z.object({
-  // Name and Email are 100% optional!
-  name: z.string().trim().max(80, "Name is too long.").optional().or(z.literal("")),
-  email: z
+const oneLine = (max: number) =>
+  z
     .string()
     .trim()
-    .email("Please enter a valid email address or leave it blank.")
-    .max(120, "Email is too long.")
-    .optional()
-    .or(z.literal("")),
+    .max(max)
+    .transform((s) => s.replace(/[\r\n\t<>]+/g, " ").trim());
+
+const schema = z.object({
+  name: oneLine(80).optional().or(z.literal("")),
+  email: z.email("Please enter a valid email address or leave it blank.").max(120).optional().or(z.literal("")),
   amount: z
     .number()
-    .int("Amount must be a whole rupee amount.")
-    .min(1, "Minimum contribution is ₹1 (100 paise).")
-    .max(100000, "Maximum single contribution is ₹1,00,000."),
-  method: z.enum(["upi", "qr", "card", "wallet", "netbanking"]),
-  message: z.string().trim().max(400, "Message must be under 400 characters.").optional(),
-  // Honeypot field against automated bots
+    .int("Please enter a whole rupee amount.")
+    .min(1, "The minimum contribution is ₹1.")
+    .max(100000, "The maximum single contribution is ₹1,00,000."),
+  method: z.enum(["upi", "card", "wallet", "netbanking"]),
+  message: oneLine(250).optional(),
   company: z.string().max(0).optional(),
 });
 
 export async function POST(req: Request) {
-  const ip = clientIp(req);
-  const limited = rateLimit(`donate-order:${ip}`, { limit: 25, windowMs: 15 * 60 * 1000 });
-  if (!limited.ok) {
-    return NextResponse.json(
-      { ok: false, error: "Too many payment attempts. Please wait a few minutes and try again." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil(limited.retryAfterMs / 1000)) } }
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid request payload." }, { status: 400 });
-  }
-
-  const parsed = createOrderSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { ok: false, error: parsed.error.issues[0]?.message || "Invalid input fields." },
-      { status: 400 }
-    );
-  }
-
-  // Bot honeypot triggered
-  if (parsed.data.company) {
-    return NextResponse.json({ ok: false, error: "Request blocked." }, { status: 400 });
-  }
-
-  const cleanName = parsed.data.name ? parsed.data.name.trim() : "";
-  const cleanEmail = parsed.data.email ? parsed.data.email.trim() : "";
-  const { amount, method } = parsed.data;
-  const amountInPaise = amount * 100; // Minimum 100 paise (₹1)
-  const orderRef = `ORD_${Date.now()}_${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
-
-  // Sign tamper-proof token valid for 20 minutes
-  const orderToken = signOrderToken({
-    orderRef,
-    amount,
-    email: cleanEmail,
-    name: cleanName || "Well-Wisher",
-    exp: Date.now() + 20 * 60 * 1000,
+  const { data, res } = await guard(req, {
+    name: "order",
+    schema,
+    limit: { limit: 12, windowMs: 15 * 60_000 },
+    globalLimit: { limit: 300, windowMs: 15 * 60_000 },
+    maxBytes: 4_000,
   });
+  if (res) return res;
 
-  const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-  const rzpKeySecret = process.env.RAZORPAY_KEY_SECRET;
-
-  if (!rzpKeyId || !rzpKeySecret) {
-    return NextResponse.json(
-      { ok: false, error: "Razorpay credentials are not configured on server." },
-      { status: 500 }
-    );
+  const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    console.error("[order] payment keys are not set");
+    return fail(503, "Contributions are paused for a short while. Please try again later.", "E-PAY-OFF");
   }
 
+  const name = data.name || "";
+  const email = data.email || "";
   try {
-    const razorpay = new Razorpay({
-      key_id: rzpKeyId,
-      key_secret: rzpKeySecret,
-    });
-
-    const order = await razorpay.orders.create({
-      amount: amountInPaise,
+    const order = await new Razorpay({ key_id: keyId, key_secret: keySecret }).orders.create({
+      amount: data.amount * 100,
       currency: "INR",
-      receipt: orderRef,
+      receipt: `ORD_${Date.now()}_${crypto.randomBytes(3).toString("hex").toUpperCase()}`,
       notes: {
-        supporter_name: cleanName || "Well-Wisher (Anonymous)",
-        supporter_email: cleanEmail || "not_provided",
-        preferred_method: method,
+        supporter_name: name || "Well-Wisher (Anonymous)",
+        supporter_email: email || "not_provided",
+        preferred_method: data.method,
         platform: "RESCUEN Official Web",
       },
     });
-
-    return NextResponse.json({
+    return json({
       ok: true,
       order_id: order.id,
-      razorpayOrderId: order.id,
-      amount: order.amount, // in paise
-      amountInr: amount, // in INR
+      amount: order.amount,
       currency: order.currency,
-      keyId: rzpKeyId,
-      orderRef,
-      orderToken,
+      keyId,
+      orderToken: signOrderToken({
+        orderId: order.id,
+        email,
+        name,
+        message: data.message || "",
+        exp: Date.now() + 60 * 60_000,
+      }),
     });
-  } catch (err: unknown) {
-    console.error("[donate/create-order] Razorpay API error:", err);
-    return NextResponse.json(
-      { ok: false, error: "Razorpay order create nahi ho paaya. Kripya punah prayas karein." },
-      { status: 500 }
+  } catch (err) {
+    console.error("[order] create failed:", (err as { statusCode?: number })?.statusCode ?? "unknown");
+    return fail(
+      502,
+      "We couldn’t start the payment just now. Nothing has been charged. Please try again.",
+      "E-PAY-ORDER"
     );
   }
 }

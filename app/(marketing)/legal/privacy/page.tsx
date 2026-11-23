@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import LegalShell, { type Section } from "@/components/LegalShell";
+import { pageMeta } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Privacy Policy",
-  description: "How RESCUEN collects, uses, encrypts, and protects your personal data.",
-};
+  description: "What RESCUEN collects, why, how it is protected and the choices you have, with a summary in simple words.",
+  path: "/legal/privacy",
+});
 
 const sections: Section[] = [
   {
@@ -14,7 +15,6 @@ const sections: Section[] = [
     body: [
       `${SITE.legalName} (“RESCUEN”, “we”) respects your privacy and is committed to protecting your personal data. This Policy explains what we collect, why, how we protect it, and the choices and rights you have.`,
       "Because RESCUEN is a safety product, we follow a data-minimisation principle: we collect only what is necessary to keep you safe, and nothing more.",
-      { note: "This is a general template for convenience and is not legal advice. Please have it reviewed by a qualified privacy/legal professional (e.g. for compliance with India’s DPDP Act, 2023 and any other applicable law) before publishing as final." },
     ],
   },
   {
@@ -26,7 +26,9 @@ const sections: Section[] = [
         "Emergency contacts: names and phone numbers you choose to add to your trusted circle.",
         "Location data: collected only when you enable a location-based feature (e.g. radar, live sharing, SOS), and only for as long as needed.",
         "Usage & device data: app version, device type, and basic diagnostics to keep the service reliable and secure.",
-        "Support data: information you provide when you contact us (e.g. your message and email).",
+        "Support data: information you provide when you contact us or report a problem (e.g. your message, email, the page address, browser type and a problem code).",
+        "Website assistant: the questions you type, the last few messages of that chat and the page you are on. They are sent to our AI provider to write a reply. We do not keep a copy on our servers.",
+        "Contributions: the name, email and message you choose to give, and the payment reference. Card, bank and UPI details are handled by the payment provider and never reach us.",
       ]},
       "We do not sell your personal data, and we do not use third-party advertising trackers.",
     ],
@@ -52,7 +54,7 @@ const sections: Section[] = [
       { list: [
         "Encryption in transit (TLS) and encryption at rest in Firebase. We intentionally do not describe this as end-to-end encryption.",
         "Passwordless sign-in (Google Sign-In + phone OTP) via Firebase, verified server-side, so there is no password to leak, with a 60-day change-lock on emergency numbers.",
-        "Secrets and keys are stored as Firebase secrets and injected at runtime — never exposed in the browser or the app bundle.",
+        "Secrets and keys are stored as protected secrets and injected at runtime — never exposed in the browser or the app bundle.",
         "Strict default-deny Firestore & Storage rules, Firebase App Check, server-side proximity filtering, a write-only evidence vault, rate-limiting and input validation.",
       ]},
       "No method of transmission or storage is 100% secure, but we continuously work to protect your data using industry best practices.",
@@ -65,7 +67,7 @@ const sections: Section[] = [
       "We share data only in limited circumstances:",
       { list: [
         "With the emergency contacts you choose, when you trigger an alert.",
-        "With trusted service providers (e.g. Firebase/Google, telecom and infrastructure providers) strictly to operate the Services, under confidentiality obligations.",
+        "With trusted service providers strictly to operate the Services: Google (Firebase, Gmail and Gemini, which powers AI replies), Razorpay (payments), Netlify (website hosting) and telecom providers.",
         "When required by law, valid legal process, or to protect the rights, safety, and security of users or the public.",
         "In connection with a merger or acquisition, with notice and continued protection of your data.",
       ]},
@@ -120,8 +122,9 @@ const sections: Section[] = [
 export default function PrivacyPage() {
   return (
     <LegalShell
+      doc="privacy"
       title="Privacy Policy"
-      updated="17 September 2026"
+      updated="23 November 2026"
       intro="Your safety data is deeply personal — so we protect it obsessively and collect only what we need. Here’s exactly how."
       sections={sections}
     />

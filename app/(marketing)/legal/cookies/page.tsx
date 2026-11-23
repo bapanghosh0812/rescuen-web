@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import LegalShell, { type Section } from "@/components/LegalShell";
+import { pageMeta } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Cookie Policy",
-  description: "How RESCUEN uses cookies and similar technologies on its website.",
-};
+  description: "The essential storage RESCUEN uses, and the tracking it does not use.",
+  path: "/legal/cookies",
+});
 
 const sections: Section[] = [
   {
@@ -23,6 +24,7 @@ const sections: Section[] = [
       { list: [
         "Essential cookies/tokens for authentication and security (e.g. keeping you signed in, preventing abuse).",
         "Preference storage for basic settings, such as remembering your choices.",
+        "Session storage for your chat with the website assistant. It stays in your browser tab and is cleared when you close it.",
         "Aggregated, privacy-respecting diagnostics to keep the service stable.",
       ]},
       "We do not use third-party advertising or cross-site tracking cookies.",
@@ -45,8 +47,9 @@ const sections: Section[] = [
 export default function CookiesPage() {
   return (
     <LegalShell
+      doc="cookies"
       title="Cookie Policy"
-      updated="17 September 2026"
+      updated="23 November 2026"
       intro="We keep it simple: only essential, privacy-respecting cookies — no ad trackers."
       sections={sections}
     />

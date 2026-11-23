@@ -1,21 +1,22 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Lock, Server, KeyRound, EyeOff, Fingerprint, ShieldCheck, Phone, BadgeCheck, Bug } from "lucide-react";
+import { pageMeta } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import Reveal from "@/components/ui/Reveal";
 
-export const metadata: Metadata = {
+export const metadata = pageMeta({
   title: "Trust & Security Centre",
-  description: "How RESCUEN keeps your data encrypted, private, and secure — and important emergency numbers.",
-};
+  description: "How RESCUEN protects your location, contacts and evidence, in plain language, and how to report a security concern.",
+  path: "/security",
+});
 
 const PRACTICES = [
-  { icon: Lock, title: "Encrypted in transit & at rest", desc: "All data travels over TLS and is encrypted at rest in Firebase — strong transport and storage protection (we don’t claim end-to-end encryption)." },
-  { icon: KeyRound, title: "Passwordless sign-in", desc: "Google Sign-In + phone OTP via Firebase, verified server-side. No password to phish, leak or reuse, plus a 60-day change-lock on emergency numbers." },
-  { icon: Server, title: "Backend-only secrets", desc: "API keys and credentials are stored as Firebase secrets and injected at runtime — never inside the app bundle or the browser." },
-  { icon: EyeOff, title: "No data selling", desc: "No ad-trackers, no data brokers. Your location is never used for ads — only shared with your contacts and nearby rescuers when you trigger SOS." },
-  { icon: Fingerprint, title: "App Check & strict rules", desc: "Firebase App Check plus default-deny Firestore/Storage rules require an authenticated user for every read and write." },
-  { icon: ShieldCheck, title: "Hardened platform", desc: "Server-side proximity filtering, a write-only evidence vault, rate-limiting and strict security headers reduce the attack surface." },
+  { icon: Lock, title: "Encrypted in transit & at rest", desc: "All your data travels over TLS and is encrypted where it’s stored. It’s strong protection, and we describe it honestly: we don’t claim end-to-end encryption." },
+  { icon: KeyRound, title: "Passwordless sign-in", desc: "Google sign-in and a phone OTP, verified on our servers. There’s no password to phish, leak or reuse, and your emergency numbers are change-locked for 60 days." },
+  { icon: Server, title: "Backend-only secrets", desc: "API keys and credentials are kept as protected secrets on our servers and are only used there. They never sit inside the app or your browser." },
+  { icon: EyeOff, title: "No data selling", desc: "No ad-trackers and no data brokers, ever. Your location isn’t used for ads. It’s shared only with your contacts and nearby rescuers when you trigger SOS." },
+  { icon: Fingerprint, title: "Strict, deny-by-default rules", desc: "Every read and write needs an authenticated user. If we haven’t clearly allowed something, the answer is no." },
+  { icon: ShieldCheck, title: "Hardened platform", desc: "Server-side proximity checks, a write-only evidence vault, rate limits and strict security headers leave an attacker with very little to work with." },
 ];
 
 const EMERGENCY = [
@@ -112,7 +113,7 @@ export default function SecurityPage() {
                 Found a security issue? We welcome responsible reports and will work with you to fix it
                 quickly. Please don’t exploit or disclose it publicly before we’ve resolved it.
               </p>
-              <a href={`mailto:${SITE.supportEmail}?subject=Security disclosure`} className="mt-4 inline-block text-sm font-semibold text-brand hover:underline">
+              <a href={`mailto:${SITE.supportEmail}?subject=Security disclosure`} className="mt-3 inline-block py-1.5 text-sm font-semibold text-brand hover:underline">
                 Email our security team →
               </a>
             </div>

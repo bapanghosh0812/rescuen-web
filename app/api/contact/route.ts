@@ -1,70 +1,39 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
-import { sendContactEmails, isMailerConfigured } from "@/lib/mailer";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { fail, guard, json } from "@/lib/http";
+import { sendContactEmails } from "@/lib/mailer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
-  name: z.string().trim().min(2, "Please enter your name").max(80),
-  email: z.string().trim().email("Enter a valid email").max(120),
-  subject: z.string().trim().max(120).optional(),
-  message: z.string().trim().min(10, "Message is too short").max(4000),
-  // Honeypot: bots fill this hidden field; humans never see it.
-  company: z.string().max(0).optional(),
+  name: z.string().trim().min(2, "Please enter your name.").max(80, "Please shorten your name."),
+  email: z.email("Please enter a valid email address.").max(120, "Please shorten your email address."),
+  subject: z.string().trim().max(120, "Please shorten the subject.").optional(),
+  message: z
+    .string()
+    .trim()
+    .min(10, "Please add a little more detail to your message.")
+    .max(4000, "Please shorten your message."),
+  // Hidden field: people never see it, bots fill it in.
+  company: z.string().max(200).optional(),
 });
 
 export async function POST(req: Request) {
-  const ip = clientIp(req);
-  const limited = rateLimit(`contact:${ip}`, { limit: 5, windowMs: 60 * 60 * 1000 });
-  if (!limited.ok) {
-    return NextResponse.json(
-      { ok: false, error: "Too many messages. Please try again later." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil(limited.retryAfterMs / 1000)) } }
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
-  }
-
-  const parsed = schema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { ok: false, error: parsed.error.issues[0]?.message || "Invalid input." },
-      { status: 400 }
-    );
-  }
-
-  // Honeypot tripped → pretend success, drop silently.
-  if (parsed.data.company) return NextResponse.json({ ok: true, delivered: true });
-
-  if (!isMailerConfigured) {
-    // Received & validated, but email creds not set yet.
-    console.warn("[contact] Mailer not configured — message received but not emailed:", {
-      name: parsed.data.name,
-      email: parsed.data.email,
-    });
-    return NextResponse.json({
-      ok: true,
-      delivered: false,
-      note: "Message received. Email delivery is not configured yet.",
-    });
-  }
+  const { data, res } = await guard(req, {
+    name: "contact",
+    schema,
+    limit: { limit: 5, windowMs: 60 * 60_000 },
+    globalLimit: { limit: 80, windowMs: 60 * 60_000 },
+    maxBytes: 12_000,
+  });
+  if (res) return res;
+  if (data.company) return json({ ok: true, ref: "RES-00000000", replied: false });
 
   try {
-    const { name, email, subject, message } = parsed.data;
-    await sendContactEmails({ name, email, subject, message });
-    return NextResponse.json({ ok: true, delivered: true });
+    const result = await sendContactEmails(data);
+    if (result.sent) return json({ ok: true, ref: result.ref, replied: result.replied });
   } catch (err) {
-    console.error("[contact] send failed:", err);
-    return NextResponse.json(
-      { ok: false, error: "We couldn’t send your message. Please try again or email us directly." },
-      { status: 502 }
-    );
+    console.error("[contact] send failed:", (err as { code?: string })?.code ?? "unknown");
   }
+  return fail(502, "Your message couldn’t be sent just now. Please try again, or email us directly.", "E-MAIL");
 }

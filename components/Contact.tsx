@@ -6,15 +6,14 @@ import ContactForm from "@/components/ContactForm";
 export default function Contact() {
   return (
     <section id="contact" className="scroll-mt-24 py-20 sm:py-28">
-      <div className="container-x grid items-start gap-12 lg:grid-cols-2">
+      <div className="container-x grid grid-cols-1 items-start gap-12 lg:grid-cols-2">
         <Reveal>
-          <span className="chip">Contact Us</span>
           <h2 className="h-display mt-5 text-3xl sm:text-4xl lg:text-5xl">
             We’re here, <span className="text-gradient-brand">around the clock</span>
           </h2>
           <p className="mt-4 max-w-md text-lg text-ink-soft">
-            Questions, feedback or need help? Leave a message and we’ll get back to you fast — you’ll
-            also receive an instant email confirmation.
+            Have a question, an idea, or need a hand? Leave us a message and we’ll get back to you as fast as we can. You’ll also
+            receive an email straight away, so you know your words have reached us.
           </p>
 
           <div className="mt-8 space-y-3">
@@ -27,7 +26,7 @@ export default function Contact() {
 
           <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-line bg-paper px-4 py-3 text-sm text-ink-soft shadow-soft">
             <Clock className="h-4 w-4 text-brand" />
-            Support hours: <b className="text-ink">24 × 7</b> · Avg. reply within a few hours
+            Write to us at any hour. We usually reply within 1-2 working days.
           </div>
         </Reveal>
 

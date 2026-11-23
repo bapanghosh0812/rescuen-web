@@ -6,32 +6,32 @@ const PILLARS = [
   {
     icon: Lock,
     title: "Encrypted in transit & at rest",
-    desc: "All data travels over TLS and is encrypted at rest in Firebase. Strong transport and storage protection for your most personal information.",
+    desc: "Everything you share travels over TLS and stays encrypted where we store it, because your most personal information deserves nothing less.",
   },
   {
     icon: Server,
     title: "Secrets stay on the backend",
-    desc: "API keys and credentials are stored as Firebase secrets and injected at runtime — they never ship inside the app, so there’s nothing on-device to steal.",
+    desc: "Our keys and credentials live only on our own servers. They never ship inside the app or the browser, so there’s nothing on your device for anyone to dig out.",
   },
   {
     icon: KeyRound,
     title: "Passwordless sign-in",
-    desc: "Google Sign-In + phone-number OTP, verified server-side. No password to phish, leak or reuse — plus a 60-day change-lock on emergency numbers.",
+    desc: "You sign in with Google and a phone OTP that our servers check. With no password there’s nothing to phish, leak or reuse, and a 60-day lock guards your emergency numbers.",
   },
   {
     icon: FileLock2,
     title: "Write-only evidence vault",
-    desc: "Emergency recordings can be uploaded but never read back from a device — only the trusted backend can retrieve them, keeping evidence tamper-resistant.",
+    desc: "Emergency recordings can go in, but they can never be read back from a phone. Only our trusted backend can retrieve them, which keeps your evidence safe from tampering.",
   },
   {
     icon: ShieldCheck,
-    title: "Strict rules + App Check",
-    desc: "Firestore & Storage require an authenticated user for every read/write with a default-deny fallback, and Firebase App Check blocks abuse and spam.",
+    title: "Strict, deny-by-default rules",
+    desc: "Every read and write needs a signed-in user, and anything we haven’t clearly allowed is refused. It’s a strict rule, and we like it that way.",
   },
   {
     icon: Radar,
     title: "Server-side proximity",
-    desc: "Distance filtering runs in the cloud, and the radar only exposes name & location — your phone and family numbers never leave your private document.",
+    desc: "Alert distances are worked out on our servers, and the radar shows only a name and a location, not your phone number or your family’s.",
   },
 ];
 
@@ -39,16 +39,15 @@ export default function Security() {
   return (
     <section id="security" className="scroll-mt-24 bg-paper py-20 sm:py-28">
       <div className="container-x">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <Reveal>
-            <span className="chip">Trust &amp; Security</span>
             <h2 className="h-display mt-5 text-3xl sm:text-4xl lg:text-5xl">
               Built like a <span className="text-gradient-brand">vault</span>, not an app.
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-ink-soft">
-              Your safety data is the most personal there is — so we protect it obsessively. A
-              passwordless design, backend-only secrets and strict, default-deny security rules mean
-              there’s simply nothing worth stealing on the front end.
+              Your safety data is the most personal thing you could ever trust us with, so we protect it obsessively. There’s no
+              password to steal, our secrets never leave our own servers, and anything we haven’t clearly allowed is refused. Put
+              simply, we’ve tried to leave nothing on the front end worth stealing.
             </p>
             <div className="mt-6">
               <Link href="/security" className="btn-ghost">
