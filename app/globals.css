@@ -154,6 +154,7 @@
   /* Section heading */
   .h-display {
     @apply font-display font-extrabold tracking-tight text-ink;
+    text-wrap: balance;
   }
 
   .link-muted {

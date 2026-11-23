@@ -58,14 +58,14 @@ const PRESET_AMOUNTS = [
   { value: 11000, tag: "Patron 👑" },
 ];
 
-const LANGUAGES: { id: Language; label: string; flag: string }[] = [
-  { id: "en", label: "English", flag: "🇬🇧" },
-  { id: "hi", label: "हिन्दी (Hindi)", flag: "🇮🇳" },
-  { id: "bn", label: "বাংলা (Bengali)", flag: "🇮🇳" },
-  { id: "hinglish", label: "Hinglish", flag: "🇮🇳" },
-  { id: "mr", label: "मराठी (Marathi)", flag: "🇮🇳" },
-  { id: "ta", label: "தமிழ் (Tamil)", flag: "🇮🇳" },
-  { id: "te", label: "తెలుగు (Telugu)", flag: "🇮🇳" },
+const LANGUAGES: { id: Language; label: string }[] = [
+  { id: "en", label: "English" },
+  { id: "hi", label: "हिन्दी (Hindi)" },
+  { id: "bn", label: "বাংলা (Bengali)" },
+  { id: "hinglish", label: "Hinglish" },
+  { id: "mr", label: "मराठी (Marathi)" },
+  { id: "ta", label: "தமிழ் (Tamil)" },
+  { id: "te", label: "తెలుగు (Telugu)" },
 ];
 
 const I18N = {
@@ -832,14 +832,11 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
           >
             <Globe className="h-4 w-4 text-brand" aria-hidden="true" />
             <span className="sr-only">Language:</span>
-            <span>
-              {LANGUAGES.find((l) => l.id === lang)?.flag}{" "}
-              {LANGUAGES.find((l) => l.id === lang)?.label}
-            </span>
+            <span>{LANGUAGES.find((l) => l.id === lang)?.label}</span>
             <ChevronDown className="h-3.5 w-3.5 opacity-60" />
           </button>
 
-                      {showLangMenu && (
+            {showLangMenu && (
               <div
                 className="menu-pop absolute right-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-2xl border border-line bg-white p-1.5 shadow-lift"
               >
@@ -861,9 +858,7 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                         : "text-ink hover:bg-paper"
                     }`}
                   >
-                    <span>
-                      {l.flag} {l.label}
-                    </span>
+                    <span>{l.label}</span>
                     {lang === l.id && <span className="text-[10px]">✓</span>}
                   </button>
                 ))}
