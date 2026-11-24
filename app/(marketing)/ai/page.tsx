@@ -35,7 +35,7 @@ export default function AiPage() {
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/75">
               Some days you need a plan, some days you need the right words, and some nights you just need someone to answer.
-              Everything here is free, private and ready in your language.
+              Everything here is free, needs no account, and is ready in your language.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <AskButton className="btn-gold">

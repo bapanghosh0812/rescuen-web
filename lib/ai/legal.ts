@@ -21,14 +21,14 @@ export const LEGAL_SUMMARY: Record<LegalDoc, Record<Lang, string[]>> = {
   privacy: {
     en: [
       "We collect only what safety features need.",
-      "Location is shared only when you use SOS, Follow-Me or the radar.",
+      "Your location is used by SOS, Follow-Me and the radar; one setting hides it when you are safe.",
       "Your data is never sold or used for advertising.",
       "It is encrypted in transit and at rest, but not end-to-end.",
       "You can see, correct or delete your data by emailing us.",
     ],
     hg: [
       "Hum sirf utna data lete hain jitna safety ke liye zaroori hai.",
-      "Location tab share hoti hai jab aap SOS, Follow-Me ya radar chalate hain.",
+      "Location SOS, Follow-Me aur radar ke kaam aati hai; ek setting ise safe samay mein chhupa deti hai.",
       "Data na becha jaata hai, na ads mein use hota hai.",
       "Data bhejte aur rakhte waqt encrypted hai, par end-to-end nahi.",
       "Email karke apna data dekh, sudhar ya delete karwa sakte hain.",

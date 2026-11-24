@@ -85,7 +85,7 @@ export const FEATURES: Feature[] = [
   {
     icon: "Video",
     title: "Private Evidence Vault",
-    desc: "When something goes wrong, proof matters. During an SOS the app records audio and photos and uploads them straight to a write-only vault. Once they’re there, nobody can open or delete them from your phone, not even someone who takes it, so they can support you with the police or in court.",
+    desc: "When something goes wrong, proof matters. During an SOS the app records audio and photos and uploads them straight to your private vault, away from your phone. It opens only for you, behind your own PIN, so even if someone takes your phone, what was uploaded is still there to support you with the police or in court.",
     accent: "ink",
   },
   {
@@ -103,7 +103,7 @@ export const FEATURES: Feature[] = [
   {
     icon: "Fingerprint",
     title: "Verified & Tamper-Locked",
-    desc: "Everyone signs in with Google and a phone OTP, so there’s no password to leak. Once you save your emergency numbers they stay locked for 60 days, which means someone who grabs your phone can’t quietly send your alerts somewhere else.",
+    desc: "Everyone signs in with Google and a phone OTP, so there’s no password to leak. Your own number can change only once in 60 days, and only after a fresh OTP, which means someone who grabs your phone can’t quietly move your account to a number of theirs.",
     accent: "brand",
   },
   {
@@ -161,7 +161,7 @@ export const HOW_STEPS = [
   {
     step: "02",
     title: "Add your trusted circle",
-    desc: "Choose up to five people who would drop everything for you. Once they’re saved, their numbers stay locked for 60 days, so nobody can change them in a bad moment.",
+    desc: "Choose up to five people who would drop everything for you. Save their numbers once and RESCUEN remembers them, so in a bad moment you never have to search for a contact.",
     icon: "Users",
   },
   {
@@ -212,11 +212,11 @@ export const FAQS = [
   },
   {
     q: "What permissions does the app need, and is my location private?",
-    a: "RESCUEN asks for location (all the time, so SOS and the radar work in the background), SMS (to alert your family and the police), camera and microphone (only during an active SOS, for evidence) and notifications (to hear alerts near you). Your location is shared only when you use a safety feature such as SOS or Follow-Me. We never sell it and never use it for advertising.",
+    a: "RESCUEN asks for location (all the time, so SOS and the radar work in the background), SMS (to alert your family and the police), camera and microphone (only during an active SOS, for evidence) and notifications (to hear alerts near you). Your position stays up to date for the 1 KM radar while the app is protecting you, and the “Hide my location when safe” setting limits that to an active SOS. We never sell it and never use it for advertising.",
   },
   {
     q: "How are my evidence and personal data protected?",
-    a: "Everything is encrypted while it travels and where it is stored on Google’s cloud. You sign in without a password, alert distances are worked out on our servers, your emergency numbers are locked for 60 days, and the evidence vault is write-only, so what has been uploaded cannot be deleted from your phone. We don’t claim end-to-end encryption, because we would rather tell you exactly what we do.",
+    a: "Everything is encrypted while it travels and where it is stored on Google’s cloud. You sign in without a password, alert distances are worked out on our servers, your own number can change only once in 60 days, and the evidence vault opens only for you, behind your own PIN. We don’t claim end-to-end encryption, because we would rather tell you exactly what we do.",
   },
   {
     q: "Which languages does RESCUEN support?",

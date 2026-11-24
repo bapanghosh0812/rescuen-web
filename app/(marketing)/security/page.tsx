@@ -12,11 +12,11 @@ export const metadata = pageMeta({
 
 const PRACTICES = [
   { icon: Lock, title: "Encrypted in transit & at rest", desc: "All your data travels over TLS and is encrypted where it’s stored. It’s strong protection, and we describe it honestly: we don’t claim end-to-end encryption." },
-  { icon: KeyRound, title: "Passwordless sign-in", desc: "Google sign-in and a phone OTP, verified on our servers. There’s no password to phish, leak or reuse, and your emergency numbers are change-locked for 60 days." },
+  { icon: KeyRound, title: "Passwordless sign-in", desc: "Google sign-in and a phone OTP, verified on our servers. There’s no password to phish, leak or reuse, and your own number is change-locked for 60 days." },
   { icon: Server, title: "Backend-only secrets", desc: "API keys and credentials are kept as protected secrets on our servers and are only used there. They never sit inside the app or your browser." },
-  { icon: EyeOff, title: "No data selling", desc: "No ad-trackers and no data brokers, ever. Your location isn’t used for ads. It’s shared only with your contacts and nearby rescuers when you trigger SOS." },
+  { icon: EyeOff, title: "No data selling", desc: "No ad-trackers and no data brokers, ever. Your location isn’t used for ads. It’s used to find help near you, shared with your contacts and nearby rescuers when you trigger SOS, and one setting hides it whenever you’re safe." },
   { icon: Fingerprint, title: "Strict, deny-by-default rules", desc: "Every read and write needs an authenticated user. If we haven’t clearly allowed something, the answer is no." },
-  { icon: ShieldCheck, title: "Hardened platform", desc: "Server-side proximity checks, a write-only evidence vault, rate limits and strict security headers leave an attacker with very little to work with." },
+  { icon: ShieldCheck, title: "Hardened platform", desc: "Server-side proximity checks, an owner-only evidence vault, rate limits and strict security headers leave an attacker with very little to work with." },
 ];
 
 const EMERGENCY = [

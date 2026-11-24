@@ -24,7 +24,7 @@ const sections: Section[] = [
       { list: [
         "Account data: your phone number (used for OTP sign-in) and, optionally, your name.",
         "Emergency contacts: names and phone numbers you choose to add to your trusted circle.",
-        "Location data: collected only when you enable a location-based feature (e.g. radar, live sharing, SOS), and only for as long as needed.",
+        "Location data: collected when a location-based feature is on (radar, live sharing, SOS), and only for as long as needed. While the radar is on, your name and latest position are kept up to date so that people near you can be found in an emergency; the “Hide my location when safe” setting limits this to an active SOS.",
         "Usage & device data: app version, device type, and basic diagnostics to keep the service reliable and secure.",
         "Support data: information you provide when you contact us or report a problem (e.g. your message, email, the page address, browser type and a problem code).",
         "Website assistant: the questions you type, the last few messages of that chat and the page you are on. They are sent to our AI provider to write a reply. We do not keep a copy on our servers.",
@@ -53,9 +53,9 @@ const sections: Section[] = [
       "Security is central to RESCUEN. We apply layered technical and organisational safeguards:",
       { list: [
         "Encryption in transit (TLS) and encryption at rest in Firebase. We intentionally do not describe this as end-to-end encryption.",
-        "Passwordless sign-in (Google Sign-In + phone OTP) via Firebase, verified server-side, so there is no password to leak, with a 60-day change-lock on emergency numbers.",
+        "Passwordless sign-in (Google Sign-In + phone OTP) via Firebase, verified server-side, so there is no password to leak, with a 60-day change-lock on your own number.",
         "Secrets and keys are stored as protected secrets and injected at runtime — never exposed in the browser or the app bundle.",
-        "Strict default-deny Firestore & Storage rules, Firebase App Check, server-side proximity filtering, a write-only evidence vault, rate-limiting and input validation.",
+        "Strict default-deny Firestore & Storage rules, Firebase App Check, server-side proximity filtering, an owner-only evidence vault, rate-limiting and input validation.",
       ]},
       "No method of transmission or storage is 100% secure, but we continuously work to protect your data using industry best practices.",
     ],
@@ -68,6 +68,7 @@ const sections: Section[] = [
       { list: [
         "With the emergency contacts you choose, when you trigger an alert.",
         "With trusted service providers strictly to operate the Services: Google (Firebase, Gmail and Gemini, which powers AI replies), Razorpay (payments), Netlify (website hosting) and telecom providers.",
+        "When you ask RESCUEN AI on this website, your question is sent to Google’s Gemini service to write the reply. Depending on the service plan, Google may review such text to improve its products, so please leave out names, addresses, OTPs and other personal details. We do not save your chats on our servers; they stay in your browser tab.",
         "When required by law, valid legal process, or to protect the rights, safety, and security of users or the public.",
         "In connection with a merger or acquisition, with notice and continued protection of your data.",
       ]},

@@ -16,12 +16,12 @@ const PILLARS = [
   {
     icon: KeyRound,
     title: "Passwordless sign-in",
-    desc: "You sign in with Google and a phone OTP that our servers check. With no password there’s nothing to phish, leak or reuse, and a 60-day lock guards your emergency numbers.",
+    desc: "You sign in with Google and a phone OTP that our servers check. With no password there’s nothing to phish, leak or reuse, and a 60-day lock guards the number your account belongs to.",
   },
   {
     icon: FileLock2,
-    title: "Write-only evidence vault",
-    desc: "Emergency recordings can go in, but they can never be read back from a phone. Only our trusted backend can retrieve them, which keeps your evidence safe from tampering.",
+    title: "Owner-only evidence vault",
+    desc: "Emergency recordings go straight into a vault that opens only for you, behind your own PIN. No other user can look inside, which keeps your evidence safe from prying eyes and tampering.",
   },
   {
     icon: ShieldCheck,
@@ -31,7 +31,7 @@ const PILLARS = [
   {
     icon: Radar,
     title: "Server-side proximity",
-    desc: "Alert distances are worked out on our servers, and the radar shows only a name and a location, not your phone number or your family’s.",
+    desc: "Alert distances are worked out on our servers. The radar shows only a name and a location; your number reaches the people alerted near you only when you raise an SOS, and your family’s numbers are never shown.",
   },
 ];
 

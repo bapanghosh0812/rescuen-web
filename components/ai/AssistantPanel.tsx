@@ -436,7 +436,7 @@ export default function AssistantPanel({
           </button>
         </div>
         <p className="mt-2 text-center text-[10.5px] leading-snug text-ink-faint">
-          Automated guidance, can be wrong. Never share OTPs or passwords.
+          Automated guidance, can be wrong. Please leave out names, addresses, OTPs and passwords.
         </p>
       </form>
     </section>

@@ -292,7 +292,7 @@ export const GUIDES: Guide[] = [
       },
       {
         h: "Add them in RESCUEN",
-        p: "Open your profile and add up to five contacts. Check every digit, because emergency numbers are change-locked for 60 days so nobody can quietly redirect your alerts.",
+        p: "Open your profile and add up to five contacts. Check every digit, because these are the numbers RESCUEN will message when you cannot, and update them whenever someone changes their number.",
       },
       {
         h: "Practise once",
@@ -301,7 +301,7 @@ export const GUIDES: Guide[] = [
     ],
     faq: [
       { q: "How many contacts should I add?", a: "Three to five. Enough that someone always answers." },
-      { q: "Why are the numbers locked for 60 days?", a: "So a person who takes or borrows your phone cannot quietly change who receives your alerts." },
+      { q: "Why is my own number locked for 60 days?", a: "So a person who takes or borrows your phone cannot quietly move your account to a number of theirs. Your family contacts can be edited any time." },
     ],
   },
 ];
