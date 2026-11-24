@@ -3,17 +3,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, CheckCircle2, KeyRound, Loader2, Phone, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+import { ArrowLeft, KeyRound, ListChecks, Loader2, LogOut, PencilLine, Phone, Route, ShieldCheck, Smartphone, Sparkles, UserRound } from "lucide-react";
 import { openAssistant } from "@/components/feedback/bus";
 import { post, type Problem } from "@/components/feedback/api";
 import ProblemNotice from "@/components/feedback/ProblemNotice";
-import type { ConfirmationResult } from "@/lib/firebase.client";
+import type { ConfirmationResult, User } from "@/lib/firebase.client";
+import { cleanName, maskPhone, rememberProfile, useProfile, type Profile } from "@/lib/profile";
 import { SITE } from "@/lib/site";
 
 // Codes are sent inside India only.
 const CC = "+91";
 
-type Step = "phone" | "otp" | "success";
+type Step = "phone" | "otp" | "name" | "profile";
 
 export default function OTPLogin({ google = false }: { google?: boolean }) {
   const [step, setStep] = useState<Step>("phone");
@@ -25,7 +26,14 @@ export default function OTPLogin({ google = false }: { google?: boolean }) {
   const error = !!problem;
   const setError = (message: string, code = "E-AUTH-FORM") => setProblem(message ? { message, code } : null);
   const [resendIn, setResendIn] = useState(0);
-  const [signedInAs, setSignedInAs] = useState("");
+  // Who this device remembers, until Firebase has confirmed who is signed in.
+  const remembered = useProfile();
+  const [me, setMe] = useState<Profile | null>(null);
+  const known = me || remembered;
+  const [confirmed, setConfirmed] = useState(false);
+  const [contact, setContact] = useState("");
+  const [name, setName] = useState("");
+  const arriving = useRef(false);
   const [shake, setShake] = useState(false);
 
   const confirmationRef = useRef<ConfirmationResult | null>(null);
@@ -33,10 +41,97 @@ export default function OTPLogin({ google = false }: { google?: boolean }) {
 
   const fullNumber = useMemo(() => `${CC}${phone.replace(/\D/g, "")}`, [phone]);
 
-  // Loaded ahead of time: a window may only open right after a tap.
+  const open = (p: Profile) => {
+    setMe(p);
+    rememberProfile(p);
+    setStep("profile");
+  };
+  const forget = () => {
+    setMe(null);
+    rememberProfile(null);
+    setStep((s) => (s === "profile" || s === "name" ? "phone" : s));
+  };
+
+  /** Opens the profile, or asks for a name the first time. */
+  const arrive = (user: User) => {
+    const how = user.phoneNumber ? maskPhone(user.phoneNumber) : user.email || "";
+    const saved = cleanName(user.displayName || "");
+    setContact(how);
+    setProblem(null);
+    if (saved) {
+      open({ name: saved, contact: how });
+    } else {
+      setName("");
+      setStep("name");
+    }
+  };
+
+  // Already signed in on this device? Then the profile opens and nothing is asked again.
   useEffect(() => {
-    if (google) void import("@/lib/firebase.client").then((m) => m.prepareSignIn()).catch(() => {});
-  }, [google]);
+    let stop = () => {};
+    let gone = false;
+    import("@/lib/firebase.client")
+      .then(({ watchUser }) => {
+        if (gone) return;
+        stop = watchUser((user) => {
+          setConfirmed(true);
+          if (arriving.current) return;
+          if (user) arrive(user);
+          else forget();
+        });
+      })
+      .catch(() => setConfirmed(true));
+    return () => {
+      gone = true;
+      stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** A fresh sign-in, checked by our server before the profile opens. */
+  const welcome = async (user: User) => {
+    const checked = await post("/api/verify-token", { idToken: await user.getIdToken() });
+    if (!checked.ok && checked.problem.code === "E-TOKEN") {
+      await import("@/lib/firebase.client").then((m) => m.endSession());
+      setProblem(checked.problem);
+      return;
+    }
+    arrive(user);
+  };
+
+  const submitName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const good = cleanName(name);
+    if (!good) {
+      setError("Please enter your name, using letters only.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const { saveName } = await import("@/lib/firebase.client");
+      await saveName(good);
+      open({ name: good, contact });
+    } catch (err: unknown) {
+      setProblem(friendlyError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const leave = async () => {
+    setLoading(true);
+    try {
+      await import("@/lib/firebase.client").then((m) => m.endSession());
+    } catch {
+      // signing out on this device must always work
+    }
+    forget();
+    setPhone("");
+    setOtp(Array(6).fill(""));
+    setProblem(null);
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -128,22 +223,18 @@ export default function OTPLogin({ google = false }: { google?: boolean }) {
     if (loading) return;
     setLoading(true);
     setError("");
+    arriving.current = true;
     try {
       if (!confirmationRef.current) throw Object.assign(new Error("expired"), { code: "auth/code-expired" });
       const cred = await confirmationRef.current.confirm(code);
-      const checked = await post("/api/verify-token", { idToken: await cred.user.getIdToken() });
-      if (!checked.ok) {
-        setProblem(checked.problem);
-        return;
-      }
-      setSignedInAs(fullNumber);
-      setStep("success");
+      await welcome(cred.user);
     } catch (err: unknown) {
       setProblem(friendlyError(err));
       triggerShake();
       setOtp(Array(6).fill(""));
       otpRefs.current[0]?.focus();
     } finally {
+      arriving.current = false;
       setLoading(false);
     }
   };
@@ -151,22 +242,21 @@ export default function OTPLogin({ google = false }: { google?: boolean }) {
   const withGoogle = async () => {
     setError("");
     setOpening(true);
+    arriving.current = true;
     try {
       const { signInWithGoogle } = await import("@/lib/firebase.client");
       const { user } = await signInWithGoogle();
-      const checked = await post("/api/verify-token", { idToken: await user.getIdToken() });
-      if (!checked.ok) {
-        setProblem(checked.problem);
-        return;
-      }
-      setSignedInAs(user.displayName || user.email || "RESCUEN");
-      setStep("success");
+      await welcome(user);
     } catch (err: unknown) {
       setProblem(friendlyError(err));
     } finally {
+      arriving.current = false;
       setOpening(false);
     }
   };
+
+  // Known visitors see their profile at once, while the sign-in is confirmed behind it.
+  const view: Step = !confirmed && known ? "profile" : step;
 
   const mmss = `00:${String(resendIn).padStart(2, "0")}`;
 
@@ -203,7 +293,7 @@ export default function OTPLogin({ google = false }: { google?: boolean }) {
         </Link>
 
           {/* ── PHONE ── */}
-          {step === "phone" && (
+          {view === "phone" && (
             <div className="menu-pop relative mt-7">
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gold-gradient text-ink shadow-gold">
                 <Phone className="h-5 w-5" />
@@ -273,7 +363,7 @@ export default function OTPLogin({ google = false }: { google?: boolean }) {
           )}
 
           {/* ── OTP (video style) ── */}
-          {step === "otp" && (
+          {view === "otp" && (
             <div className="menu-pop relative mt-7 text-center">
               <button onClick={() => {
                   setProblem(null);
@@ -349,28 +439,88 @@ export default function OTPLogin({ google = false }: { google?: boolean }) {
             </div>
           )}
 
-          {/* ── SUCCESS ── */}
-          {step === "success" && (
-            <div className="menu-pop relative mt-8 text-center">
-              <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gold-gradient text-ink shadow-gold">
-                <CheckCircle2 className="h-10 w-10" />
-              </span>
-              <h1 className="mt-6 font-display text-2xl font-extrabold text-white sm:text-3xl">You’re verified</h1>
-              <p className="mt-2 text-white/60">
-                Signed in as <b data-no-translate className="text-white">{signedInAs}</b>
+          {/* ── NAME (first time, or to change it) ── */}
+          {view === "name" && (
+            <div className="menu-pop relative mt-7">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gold-gradient text-ink shadow-gold">
+                <UserRound className="h-5 w-5" />
+              </div>
+              <h1 className="mt-4 font-display text-2xl font-extrabold text-white sm:text-3xl">What should we call you?</h1>
+              <p className="mt-1.5 text-sm text-white/70">
+                Just your name. It becomes your profile, and signing in the same way always opens it.
               </p>
-              <div className="mt-8 flex flex-col gap-3">
+              <form onSubmit={submitName} className="mt-7 space-y-5">
+                <input
+                  autoComplete="name"
+                  aria-label="Your name"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value.slice(0, 40));
+                    if (problem) setProblem(null);
+                  }}
+                  autoFocus
+                  required
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-base text-white placeholder:text-white/35 outline-none focus:border-gold-400"
+                />
+                {problem && <ProblemNotice dark problem={problem} area="Profile name" />}
+                <button type="submit" disabled={loading} className="btn-gold w-full text-base disabled:opacity-70">
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Saving" /> : "Save my profile"}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* ── PROFILE ── */}
+          {view === "profile" && known && (
+            <div className="menu-pop relative mt-8 text-center">
+              <span data-no-translate className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gold-gradient font-display text-3xl font-extrabold text-ink shadow-gold" aria-hidden="true">
+                {initial(known.name)}
+              </span>
+              <h1 className="mt-5 font-display text-2xl font-extrabold text-white [overflow-wrap:anywhere] sm:text-3xl">
+                <span>Namaste,</span> <span data-no-translate className="text-gold-400">{known.name}</span>
+              </h1>
+              {known.contact && <p data-no-translate className="mt-1.5 text-sm text-white/65">{known.contact}</p>}
+              <div className="mt-7 flex flex-col gap-3">
                 <a href={SITE.appStoreUrl} target="_blank" rel="noreferrer" className="btn-gold w-full text-base">
-                  Continue to the App
+                  <Smartphone className="h-5 w-5" aria-hidden="true" /> Continue to the App
                 </a>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Link href="/ai#planner" className="btn border border-white/15 bg-white/5 px-3 py-3 text-xs text-white hover:bg-white/10">
+                    <Route className="h-4 w-4 text-gold-400" aria-hidden="true" /> Safety Planner
+                  </Link>
+                  <Link href="/ai#check" className="btn border border-white/15 bg-white/5 px-3 py-3 text-xs text-white hover:bg-white/10">
+                    <ListChecks className="h-4 w-4 text-gold-400" aria-hidden="true" /> Safety Check
+                  </Link>
+                </div>
                 <Link href="/" className="btn w-full border border-white/15 bg-white/5 text-white hover:bg-white/10">
                   Back to Home
                 </Link>
               </div>
+              {problem && <ProblemNotice dark problem={problem} area="Profile" className="mt-5" />}
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setName(known.name);
+                    setContact(known.contact);
+                    setProblem(null);
+                    setConfirmed(true);
+                    setStep("name");
+                  }}
+                  className="inline-flex items-center gap-1.5 py-2 text-white/70 hover:text-gold-400"
+                >
+                  <PencilLine className="h-3.5 w-3.5" aria-hidden="true" /> Change name
+                </button>
+                <button type="button" onClick={leave} disabled={loading} className="inline-flex items-center gap-1.5 py-2 text-white/70 hover:text-gold-400">
+                  <LogOut className="h-3.5 w-3.5" aria-hidden="true" /> Sign out
+                </button>
+              </div>
+              <p className="mt-2 text-[11px] text-white/55">You stay signed in on this device until you sign out.</p>
             </div>
           )}
 
-        {step !== "success" && (
+        {view !== "profile" && (
           <p className="relative mt-7 text-center text-[11px] text-white/60">
             By continuing you agree to our{" "}
             <Link href="/legal/terms" className="font-semibold text-white/60 hover:text-gold-400">Terms</Link> &amp;{" "}
@@ -383,6 +533,9 @@ export default function OTPLogin({ google = false }: { google?: boolean }) {
     </div>
   );
 }
+
+/** The first letter of a name, in any script. */
+const initial = (name: string) => [...name][0]?.toUpperCase() || "R";
 
 function GoogleMark() {
   return (
@@ -414,6 +567,8 @@ const PROBLEMS: Record<string, [string, string]> = {
   "auth/operation-not-allowed": [LATER, "E-AUTH-SMS"],
   "auth/quota-exceeded": [LATER, "E-AUTH-SMS"],
   "auth/unauthorized-domain": [LATER, "E-AUTH-DOMAIN"],
+  "auth/user-token-expired": ["Your sign-in has expired. Please sign in again.", "E-AUTH-EXPIRED"],
+  "auth/requires-recent-login": ["Your sign-in has expired. Please sign in again.", "E-AUTH-EXPIRED"],
 };
 
 /** Turns any sign-in failure into plain words. Technical details never reach the page. */

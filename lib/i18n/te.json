@@ -649,5 +649,15 @@
 "or use your phone number":"లేదా ఫోన్ నంబర్‌తో",
 "Please enter your 10-digit mobile number.":"దయచేసి మీ 10 అంకెల మొబైల్ నంబర్ రాయండి.",
 "The sign-in window was closed. Please try again.":"సైన్-ఇన్ విండో మూసుకుపోయింది. మళ్ళీ ప్రయత్నించండి.",
-"Your browser blocked the sign-in window. Please allow it and try again.":"మీ బ్రౌజర్ సైన్-ఇన్ విండోను ఆపేసింది. అనుమతించి మళ్ళీ ప్రయత్నించండి."
+"Your browser blocked the sign-in window. Please allow it and try again.":"మీ బ్రౌజర్ సైన్-ఇన్ విండోను ఆపేసింది. అనుమతించి మళ్ళీ ప్రయత్నించండి.",
+"What should we call you?":"మిమ్మల్ని ఏమని పిలవాలి?",
+"Just your name. It becomes your profile, and signing in the same way always opens it.":"మీ పేరు చాలు. అదే మీ ప్రొఫైల్; ఇలాగే సైన్ ఇన్ అయితే ఎప్పుడూ అదే తెరుచుకుంటుంది.",
+"Save my profile":"నా ప్రొఫైల్ సేవ్ చేయండి",
+"Please enter your name, using letters only.":"దయచేసి మీ పేరును అక్షరాలతో మాత్రమే రాయండి.",
+"Namaste,":"నమస్తే,",
+"Your profile":"మీ ప్రొఫైల్",
+"Change name":"పేరు మార్చండి",
+"Sign out":"సైన్ అవుట్",
+"You stay signed in on this device until you sign out.":"సైన్ అవుట్ అయ్యే వరకు ఈ పరికరంలో సైన్ ఇన్‌లోనే ఉంటారు.",
+"Your sign-in has expired. Please sign in again.":"మీ సైన్-ఇన్ గడువు ముగిసింది. మళ్ళీ సైన్ ఇన్ అవ్వండి."
 }

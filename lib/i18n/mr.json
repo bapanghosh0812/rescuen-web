@@ -649,5 +649,15 @@
 "or use your phone number":"किंवा फोन क्रमांकाने",
 "Please enter your 10-digit mobile number.":"कृपया तुमचा १० अंकी मोबाइल क्रमांक लिहा.",
 "The sign-in window was closed. Please try again.":"साइन-इनची विंडो बंद झाली. कृपया पुन्हा प्रयत्न करा.",
-"Your browser blocked the sign-in window. Please allow it and try again.":"तुमच्या ब्राउझरने साइन-इन विंडो अडवली. कृपया परवानगी देऊन पुन्हा प्रयत्न करा."
+"Your browser blocked the sign-in window. Please allow it and try again.":"तुमच्या ब्राउझरने साइन-इन विंडो अडवली. कृपया परवानगी देऊन पुन्हा प्रयत्न करा.",
+"What should we call you?":"आम्ही तुम्हाला काय म्हणू?",
+"Just your name. It becomes your profile, and signing in the same way always opens it.":"फक्त तुमचे नाव. तेच तुमचे प्रोफाइल होईल, आणि याच पद्धतीने साइन इन केल्यावर नेहमी तेच उघडेल.",
+"Save my profile":"माझे प्रोफाइल जतन करा",
+"Please enter your name, using letters only.":"कृपया तुमचे नाव फक्त अक्षरांत लिहा.",
+"Namaste,":"नमस्कार,",
+"Your profile":"तुमचे प्रोफाइल",
+"Change name":"नाव बदला",
+"Sign out":"साइन आउट",
+"You stay signed in on this device until you sign out.":"साइन आउट करेपर्यंत तुम्ही या डिव्हाइसवर साइन इन राहाल.",
+"Your sign-in has expired. Please sign in again.":"तुमचे साइन-इन संपले आहे. कृपया पुन्हा साइन इन करा."
 }

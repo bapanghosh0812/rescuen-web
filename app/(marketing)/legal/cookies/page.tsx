@@ -23,7 +23,7 @@ const sections: Section[] = [
       "We use only what is necessary to run the site securely and reliably:",
       { list: [
         "Essential cookies/tokens for authentication and security (e.g. keeping you signed in, preventing abuse).",
-        "Preference storage for basic settings, such as remembering your choices.",
+        "Preference storage for basic settings, such as remembering your choices and, when you sign in, the name on your profile.",
         "Session storage for your chat with the website assistant. It stays in your browser tab and is cleared when you close it.",
         "Aggregated, privacy-respecting diagnostics to keep the service stable.",
       ]},

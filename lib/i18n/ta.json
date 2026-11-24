@@ -649,5 +649,15 @@
 "or use your phone number":"அல்லது தொலைபேசி எண் மூலம்",
 "Please enter your 10-digit mobile number.":"உங்கள் 10 இலக்க கைபேசி எண்ணை உள்ளிடுங்கள்.",
 "The sign-in window was closed. Please try again.":"உள்நுழைவு சாளரம் மூடப்பட்டது. மீண்டும் முயலுங்கள்.",
-"Your browser blocked the sign-in window. Please allow it and try again.":"உங்கள் உலாவி உள்நுழைவு சாளரத்தைத் தடுத்தது. அனுமதித்து மீண்டும் முயலுங்கள்."
+"Your browser blocked the sign-in window. Please allow it and try again.":"உங்கள் உலாவி உள்நுழைவு சாளரத்தைத் தடுத்தது. அனுமதித்து மீண்டும் முயலுங்கள்.",
+"What should we call you?":"உங்களை எப்படி அழைக்கலாம்?",
+"Just your name. It becomes your profile, and signing in the same way always opens it.":"உங்கள் பெயர் மட்டும் போதும். அதுவே உங்கள் சுயவிவரம்; இதே முறையில் உள்நுழைந்தால் எப்போதும் அதுவே திறக்கும்.",
+"Save my profile":"என் சுயவிவரத்தைச் சேமி",
+"Please enter your name, using letters only.":"உங்கள் பெயரை எழுத்துகளில் மட்டும் எழுதுங்கள்.",
+"Namaste,":"வணக்கம்,",
+"Your profile":"உங்கள் சுயவிவரம்",
+"Change name":"பெயரை மாற்று",
+"Sign out":"வெளியேறு",
+"You stay signed in on this device until you sign out.":"வெளியேறும் வரை இந்தச் சாதனத்தில் உள்நுழைந்தே இருப்பீர்கள்.",
+"Your sign-in has expired. Please sign in again.":"உங்கள் உள்நுழைவு காலாவதியானது. மீண்டும் உள்நுழையுங்கள்."
 }

@@ -7,11 +7,15 @@ import { getApp, getApps, initializeApp, type FirebaseApp } from "@firebase/app"
 import {
   getAuth,
   GoogleAuthProvider,
+  onAuthStateChanged,
   RecaptchaVerifier,
   signInWithPhoneNumber,
   signInWithPopup,
+  signOut,
+  updateProfile,
   type Auth,
   type ConfirmationResult,
+  type User,
   type UserCredential,
 } from "@firebase/auth";
 
@@ -52,11 +56,6 @@ export async function sendOtp(phone: string, containerId: string): Promise<Confi
   }
 }
 
-/** Gets the sign-in window ready, so it opens the moment it is asked for. */
-export function prepareSignIn() {
-  auth();
-}
-
 /** Opens Google's own sign-in window. */
 export function signInWithGoogle(): Promise<UserCredential> {
   const provider = new GoogleAuthProvider();
@@ -64,4 +63,21 @@ export function signInWithGoogle(): Promise<UserCredential> {
   return signInWithPopup(auth(), provider);
 }
 
-export type { ConfirmationResult };
+/** Tells who is signed in on this device, now and whenever it changes. The sign-in is kept until they sign out. */
+export function watchUser(fn: (user: User | null) => void) {
+  return onAuthStateChanged(auth(), fn);
+}
+
+/** Saves the name with the sign-in itself, so the same number shows the same profile on every device. */
+export async function saveName(name: string): Promise<User> {
+  const user = auth().currentUser;
+  if (!user) throw Object.assign(new Error("signed out"), { code: "auth/user-token-expired" });
+  await updateProfile(user, { displayName: name });
+  return user;
+}
+
+export function endSession() {
+  return signOut(auth());
+}
+
+export type { ConfirmationResult, User };

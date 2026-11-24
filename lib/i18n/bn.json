@@ -797,5 +797,15 @@
 "or use your phone number":"অথবা ফোন নম্বর দিয়ে",
 "Please enter your 10-digit mobile number.":"আপনার ১০ সংখ্যার মোবাইল নম্বর লিখুন।",
 "The sign-in window was closed. Please try again.":"সাইন-ইনের জানালা বন্ধ হয়ে গেছে। আবার চেষ্টা করুন।",
-"Your browser blocked the sign-in window. Please allow it and try again.":"আপনার ব্রাউজার সাইন-ইনের জানালা আটকে দিয়েছে। অনুমতি দিয়ে আবার চেষ্টা করুন।"
+"Your browser blocked the sign-in window. Please allow it and try again.":"আপনার ব্রাউজার সাইন-ইনের জানালা আটকে দিয়েছে। অনুমতি দিয়ে আবার চেষ্টা করুন।",
+"What should we call you?":"আপনাকে কী নামে ডাকব?",
+"Just your name. It becomes your profile, and signing in the same way always opens it.":"শুধু আপনার নাম। এটাই আপনার প্রোফাইল হবে, আর একইভাবে সাইন ইন করলে সবসময় এটাই খুলবে।",
+"Save my profile":"আমার প্রোফাইল রাখুন",
+"Please enter your name, using letters only.":"আপনার নাম শুধু অক্ষরে লিখুন।",
+"Namaste,":"নমস্কার,",
+"Your profile":"আপনার প্রোফাইল",
+"Change name":"নাম বদলান",
+"Sign out":"সাইন আউট",
+"You stay signed in on this device until you sign out.":"সাইন আউট না করা পর্যন্ত এই ডিভাইসে আপনি সাইন ইন থাকবেন।",
+"Your sign-in has expired. Please sign in again.":"আপনার সাইন-ইনের মেয়াদ শেষ। আবার সাইন ইন করুন।"
 }

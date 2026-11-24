@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, Loader2, Send, Undo2, Wand2 } from "lucide-react";
 import { post, type Problem } from "@/components/feedback/api";
 import ProblemNotice from "@/components/feedback/ProblemNotice";
+import { useProfile } from "@/lib/profile";
 
 const EMPTY = { name: "", email: "", subject: "", message: "", company: "" };
 
@@ -14,6 +15,11 @@ export default function ContactForm() {
   const [before, setBefore] = useState<string | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [done, setDone] = useState<{ ref: string; replied: boolean } | null>(null);
+
+  const profile = useProfile();
+  useEffect(() => {
+    if (profile) setForm((f) => (f.name ? f : { ...f, name: profile.name }));
+  }, [profile]);
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));

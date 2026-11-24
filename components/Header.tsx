@@ -6,12 +6,14 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, HeartHandshake, Instagram, LogIn, Menu, MessageCircle, MoreVertical, Search, Smartphone, X } from "lucide-react";
 import LanguageMenu from "@/components/i18n/LanguageMenu";
+import { useProfile } from "@/lib/profile";
 import { MENU_LINKS, NAV, SITE } from "@/lib/site";
 
 const openSearch = () => window.dispatchEvent(new Event("rescuen:search"));
 
 export default function Header() {
   const path = usePathname();
+  const profile = useProfile();
   const [scrolled, setScrolled] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -101,6 +103,16 @@ export default function Header() {
             <Search className="h-[18px] w-[18px]" />
           </button>
           <LanguageMenu className={square} />
+          {profile && (
+            <Link
+              href="/login"
+              aria-label="Your profile"
+              data-no-translate
+              className="hidden h-10 w-10 place-items-center rounded-xl bg-brand-gradient font-display text-sm font-extrabold text-white shadow-soft sm:grid"
+            >
+              {[...profile.name][0]?.toUpperCase()}
+            </Link>
+          )}
           <Link href="/donate" className="btn-gold hidden whitespace-nowrap px-4 py-2.5 text-xs font-extrabold md:inline-flex">
             <HeartHandshake className="h-4 w-4 lg:hidden xl:block" aria-hidden="true" /> Support
           </Link>
@@ -115,7 +127,7 @@ export default function Header() {
             {menu && (
               <div className="menu-pop absolute right-0 top-full mt-2 w-64 overflow-hidden rounded-2xl border border-line bg-white p-2 shadow-lift">
                 <Link href="/login" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-soft hover:bg-mist hover:text-ink">
-                  <LogIn className="h-4 w-4" aria-hidden="true" /> Sign in
+                  <LogIn className="h-4 w-4" aria-hidden="true" /> {profile ? "Your profile" : "Sign in"}
                 </Link>
                 {MENU_LINKS.map((l) => {
                   const external = l.href.startsWith("http");
@@ -171,7 +183,7 @@ export default function Header() {
             <LanguageMenu inline />
             <div className="mt-4 flex gap-2">
               <Link href="/login" className="btn-ghost flex-1">
-                <LogIn className="h-4 w-4" aria-hidden="true" /> Sign in
+                <LogIn className="h-4 w-4" aria-hidden="true" /> {profile ? "Your profile" : "Sign in"}
               </Link>
               <a href={SITE.appStoreUrl} target="_blank" rel="noreferrer" className="btn-primary flex-1">
                 <Smartphone className="h-4 w-4" aria-hidden="true" /> Get the app
