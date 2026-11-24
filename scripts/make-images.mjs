@@ -41,13 +41,7 @@ const ph = { w: 400, h: 700 };
 const feather = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${ph.w}" height="${ph.h}">
   <defs><filter id="f" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="20"/></filter></defs>
   <rect x="32" y="30" width="${ph.w - 64}" height="${ph.h}" rx="60" fill="#fff" filter="url(#f)"/></svg>`);
-// The coordinates in the screenshot are softened so no exact place is shared.
-const spot = { left: 368, top: 478, width: 220, height: 46 };
-const softened = await sharp(pub("promo/promo-1.webp"))
-  .composite([{ input: await sharp(pub("promo/promo-1.webp")).extract(spot).blur(9).png().toBuffer(), left: spot.left, top: spot.top }])
-  .png()
-  .toBuffer();
-const wholePhone = await sharp(softened)
+const wholePhone = await sharp(pub("promo/promo-1.webp"))
   .extract({ left: 165, top: 235, width: 590, height: 1032 })
   .resize(ph.w, ph.h, { fit: "fill" })
   .ensureAlpha()
