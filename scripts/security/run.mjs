@@ -11,6 +11,7 @@ const PORT = 4600;
 const BASE = `http://localhost:${PORT}`;
 const LOG = path.join(os.tmpdir(), `rescuen-security-${process.pid}.log`);
 const SECRET = "unit_test_secret_not_real";
+const HOOK = "unit_test_hook_not_real";
 fs.writeFileSync(LOG, "");
 if (!fs.existsSync(path.join(root, ".next/BUILD_ID"))) throw new Error("Run npm run build first.");
 
@@ -25,6 +26,7 @@ const server = spawn(process.execPath, [path.join(root, "node_modules/next/dist/
     RAZORPAY_KEY_ID: "rzp_test_fake",
     NEXT_PUBLIC_RAZORPAY_KEY_ID: "rzp_test_fake",
     RAZORPAY_KEY_SECRET: SECRET,
+    RAZORPAY_WEBHOOK_SECRET: HOOK,
     GMAIL_USER: "support@test.local",
     GMAIL_APP_PASSWORD: "not-a-real-password",
     CONTACT_TO: "inbox@test.local",
@@ -261,7 +263,37 @@ try {
     const first = await post("/api/verify-payment", { ...good, email: "victim@test.local", name: "Hacker", amount: 99999 });
     ok(first.status === 200 && first.data.receipt.amount === 101, `genuine payment was not receipted (${first.text.slice(0, 120)})`);
     ok(first.data?.receipt?.email === "donor@test.local" && first.data?.receipt?.name === "Donor", "donor details were swapped by the request");
-    ok((await V({})).status === 409, "the same payment was receipted twice");
+    const receiptMails = () => mails().filter((m) => m.rcpt.some((r) => r.includes("donor@test.local"))).length;
+    const once = receiptMails();
+    const again = await V({});
+    ok(again.status === 200 && again.data.receipt.receiptId === first.data.receipt.receiptId, "asking again gave a different receipt");
+    ok(once === 1 && receiptMails() === 1, `the receipt was emailed ${receiptMails()} times`);
+    ok((await V({ razorpay_payment_id: "pay_Dollar00001", razorpay_signature: sign("order_TestOrder01", "pay_Dollar00001") })).data?.code === "E-PAY-STATUS", "a payment in another currency got a receipt");
+    ok((await V({ razorpay_payment_id: "pay_Stuck000001", razorpay_signature: sign("order_TestOrder01", "pay_Stuck000001") })).data?.code === "E-PAY-STATUS", "money that was never captured got a receipt");
+    ok((await V({ razorpay_payment_id: "pay_Auth0000001", razorpay_signature: sign("order_TestOrder01", "pay_Auth0000001") })).status === 200 && log().some((e) => e.kind === "pay" && /pay_Auth0000001\/capture/.test(e.path)), "an authorised payment was not captured");
+    ok((await V({ razorpay_payment_id: "pay_OtherShop01", razorpay_signature: sign("order_TestOrder01", "pay_OtherShop01") })).data?.code === "E-PAY-STATUS", "a payment for another order got a receipt");
+
+    // Razorpay's own call, and people pretending to be Razorpay
+    const event = (id, order = "order_TestOrder01", name = "payment.captured") => JSON.stringify({ event: name, payload: { payment: { entity: { id, order_id: order, amount: 99999900, email: "victim@test.local" } } } });
+    const hook = async (raw, signature) => (await fetch(BASE + "/api/razorpay-webhook", { method: "POST", headers: { "content-type": "application/json", "x-nf-client-connection-ip": newIp(), ...(signature === null ? {} : { "x-razorpay-signature": signature }) }, body: raw })).status;
+    const hmac = (raw, key) => crypto.createHmac("sha256", key).update(raw).digest("hex");
+    const body = event("pay_Hook0000001");
+    const before = mails().length;
+    ok((await hook(body, null)) === 400, "bank message without a signature accepted");
+    ok((await hook(body, "0".repeat(64))) === 400, "bank message with a forged signature accepted");
+    ok((await hook(body, hmac(body, SECRET))) === 400, "bank message signed with the wrong key accepted");
+    ok((await hook(body, hmac(body, ""))) === 400, "bank message signed with an empty key accepted");
+    ok((await hook(body.replace("pay_Hook0000001", "pay_Hook0000002"), hmac(body, HOOK))) === 400, "changed bank message accepted");
+    ok((await hook("x".repeat(90_000), hmac("x", HOOK))) === 400, "oversized bank message accepted");
+    ok((await hook("{", hmac("{", HOOK))) === 400, "broken bank message accepted");
+    ok((await fetch(BASE + "/api/razorpay-webhook")).status === 405, "bank address answers to GET");
+    ok(mails().length === before, "a forged bank message sent an email");
+    for (const raw of [event("pay_OtherShop01", "order_OtherShop01"), event("pay_Pending0001"), event("../../x"), event("pay_Hook0000003", "order_TestOrder01", "payment.failed")]) await hook(raw, hmac(raw, HOOK));
+    ok(mails().length === before, "a bank message for someone else's payment sent an email");
+    for (let i = 0; i < 3; i++) ok((await hook(body, hmac(body, HOOK))) === 200, "a genuine bank message was refused");
+    const hooked = mails().slice(before).filter((m) => m.rcpt.some((r) => r.includes("hook@test.local")));
+    ok(hooked.length === 1, `a genuine bank message sent ${hooked.length} receipts instead of 1`);
+    ok(!decode(hooked[0]?.body || "").includes("9,99,999") && !mails().some((m) => m.rcpt.some((r) => r.includes("victim@"))), "amount or address from the message was trusted");
     ok(!mails().some((m) => m.rcpt.some((r) => r.includes("victim@"))), "a receipt was sent to a swapped address");
     ok((await post("/api/create-order", { amount: 100 })).status === 404, "the old unchecked payment endpoint is still there");
   });

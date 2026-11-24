@@ -1,8 +1,8 @@
 import crypto from "crypto";
-import Razorpay from "razorpay";
 import { z } from "zod";
 import { signOrderToken } from "@/lib/donation-security";
 import { fail, guard, json } from "@/lib/http";
+import { PLATFORM, razorpay } from "@/lib/razorpay";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,9 +37,8 @@ export async function POST(req: Request) {
   });
   if (res) return res;
 
-  const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  if (!keyId || !keySecret) {
+  const pay = razorpay();
+  if (!pay) {
     console.error("[order] payment keys are not set");
     return fail(503, "Contributions are paused for a short while. Please try again later.", "E-PAY-OFF");
   }
@@ -47,7 +46,7 @@ export async function POST(req: Request) {
   const name = data.name || "";
   const email = data.email || "";
   try {
-    const order = await new Razorpay({ key_id: keyId, key_secret: keySecret }).orders.create({
+    const order = await pay.client.orders.create({
       amount: data.amount * 100,
       currency: "INR",
       receipt: `ORD_${Date.now()}_${crypto.randomBytes(3).toString("hex").toUpperCase()}`,
@@ -55,7 +54,8 @@ export async function POST(req: Request) {
         supporter_name: name || "Well-Wisher (Anonymous)",
         supporter_email: email || "not_provided",
         preferred_method: data.method,
-        platform: "RESCUEN Official Web",
+        supporter_message: data.message || "",
+        platform: PLATFORM,
       },
     });
     return json({
@@ -63,13 +63,13 @@ export async function POST(req: Request) {
       order_id: order.id,
       amount: order.amount,
       currency: order.currency,
-      keyId,
+      keyId: pay.keyId,
       orderToken: signOrderToken({
         orderId: order.id,
         email,
         name,
         message: data.message || "",
-        exp: Date.now() + 60 * 60_000,
+        exp: Date.now() + 24 * 60 * 60_000,
       }),
     });
   } catch (err) {

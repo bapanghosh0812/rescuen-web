@@ -69,9 +69,20 @@ if (process.env.SECURITY_FAKES === "1" && !globalThis.__fakes) {
           const b = JSON.parse(raw || "{}");
           return res.end(JSON.stringify({ id: "order_TestOrder01", amount: b.amount, currency: b.currency }));
         }
-        const id = req.url.split("/").pop();
-        if (id === "pay_Pending0001") return res.end(JSON.stringify({ id, order_id: "order_TestOrder01", status: "failed", amount: 10100 }));
-        res.end(JSON.stringify({ id, order_id: "order_TestOrder01", status: "captured", amount: 10100, method: "upi" }));
+        const id = req.url.match(/(pay|order)_[A-Za-z0-9]+/)?.[0] || "";
+        if (id.startsWith("order_")) {
+          const ours = id !== "order_OtherShop01";
+          return res.end(JSON.stringify({ id, notes: { platform: ours ? "RESCUEN Official Web" : "Another shop", supporter_name: "Donor", supporter_email: "hook@test.local", supporter_message: "" } }));
+        }
+        const p = { id, order_id: id === "pay_OtherShop01" ? "order_OtherShop01" : "order_TestOrder01", status: "captured", amount: 10100, currency: "INR", method: "upi", created_at: 1795500000 };
+        if (id === "pay_Pending0001") p.status = "failed";
+        if (id === "pay_Dollar00001") p.currency = "USD";
+        if (id === "pay_Auth0000001" && !req.url.endsWith("/capture")) p.status = "authorized";
+        if (id === "pay_Stuck000001") {
+          if (req.url.endsWith("/capture")) res.statusCode = 400;
+          p.status = "authorized";
+        }
+        res.end(JSON.stringify(p));
       });
     })
     .on("error", () => {})

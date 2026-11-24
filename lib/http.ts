@@ -45,11 +45,11 @@ export function originAllowed(req: Request): boolean {
 const TOO_BIG = Symbol("too-big");
 const BAD = Symbol("bad");
 
-/** Reads a JSON body without ever buffering more than `maxBytes`. */
-async function readJson(req: Request, maxBytes: number): Promise<unknown> {
-  if (Number(req.headers.get("content-length") || 0) > maxBytes) return TOO_BIG;
+/** Reads a body without ever buffering more than `maxBytes`. Null when it is larger. */
+export async function readText(req: Request, maxBytes: number): Promise<string | null> {
+  if (Number(req.headers.get("content-length") || 0) > maxBytes) return null;
   const reader = req.body?.getReader();
-  if (!reader) return BAD;
+  if (!reader) return "";
   const chunks: Uint8Array[] = [];
   let size = 0;
   for (;;) {
@@ -58,12 +58,18 @@ async function readJson(req: Request, maxBytes: number): Promise<unknown> {
     size += value.byteLength;
     if (size > maxBytes) {
       await reader.cancel();
-      return TOO_BIG;
+      return null;
     }
     chunks.push(value);
   }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function readJson(req: Request, maxBytes: number): Promise<unknown> {
+  const text = await readText(req, maxBytes);
+  if (text === null) return TOO_BIG;
   try {
-    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    return JSON.parse(text);
   } catch {
     return BAD;
   }

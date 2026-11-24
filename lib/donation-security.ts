@@ -45,29 +45,42 @@ export function verifyRazorpaySignature(orderId: string, paymentId: string, sign
   return safeEqual(signature, crypto.createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex"));
 }
 
+/** Proves a message really came from Razorpay's servers. */
+export function verifyWebhook(raw: string, signature: string, secret: string) {
+  return safeEqual(signature, crypto.createHmac("sha256", secret).update(raw).digest("hex"));
+}
+
 const seen = new Set<string>();
+const receipts = () => getStore({ name: "receipts", consistency: "strong" });
 
 /**
- * Claims a payment so its receipt can be issued exactly once. Uses Netlify's
- * shared store when available; otherwise falls back to this instance's memory.
+ * True for the one request that should send this payment's emails. Uses
+ * Netlify's shared store when available; otherwise this instance's memory.
  */
-export async function claimPayment(paymentId: string): Promise<boolean> {
+export async function claimReceipt(paymentId: string): Promise<boolean> {
   if (seen.has(paymentId)) return false;
   if (seen.size > 5000) seen.clear();
   seen.add(paymentId);
   try {
-    const { modified } = await getStore({ name: "receipts", consistency: "strong" }).setJSON(
-      paymentId,
-      { at: new Date().toISOString() },
-      { onlyIfNew: true }
-    );
-    return modified;
+    return (await receipts().setJSON(paymentId, { at: new Date().toISOString() }, { onlyIfNew: true })).modified;
   } catch {
     return true;
   }
 }
 
-export function generateReceiptId(): string {
-  const day = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }).replace(/-/g, "");
-  return `RES-DAAN-${day}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+/** Lets a later request try again when no email could be sent. */
+export async function releaseReceipt(paymentId: string) {
+  seen.delete(paymentId);
+  try {
+    await receipts().delete(paymentId);
+  } catch {
+    // nothing was stored
+  }
+}
+
+/** The receipt number belongs to the payment: asking again always gives the same one. */
+export function receiptIdFor(paymentId: string, paidAt: Date): string {
+  const day = paidAt.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }).replace(/-/g, "");
+  const tag = crypto.createHmac("sha256", signingKey()).update(`receipt:${paymentId}`).digest("hex").slice(0, 8);
+  return `RES-DAAN-${day}-${tag.toUpperCase()}`;
 }

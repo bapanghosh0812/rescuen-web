@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   HeartHandshake,
   ShieldCheck,
@@ -113,6 +113,7 @@ const I18N = {
     creatingOrder: "Preparing your contribution",
     openingGateway: "Opening the secure payment window",
     verifying: "Confirming with your bank",
+    checkAgain: "Check again",
     footerNote: "Secure checkout by Razorpay · UPI, cards, net banking and wallets",
     celebratingBadge: "🙏 Sincere Gratitude · Bank Verified Contribution",
     celebratingTitle: "Namaste & Thank You,",
@@ -169,6 +170,7 @@ const I18N = {
     creatingOrder: "रेजरपे आर्डर बन रहा है...",
     openingGateway: "सुरक्षित रेजरपे गेटवे खुल रहा है...",
     verifying: "बैंक सत्यापन जारी है...",
+    checkAgain: "फिर से जाँचें",
     footerNote: "रेज़रपे का सुरक्षित चेकआउट · UPI, कार्ड, नेट बैंकिंग और वॉलेट",
     celebratingBadge: "🙏 कोटि-कोटि धन्यवाद · बैंक सत्यापित योगदान",
     celebratingTitle: "नमस्ते एवं हार्दिक धन्यवाद,",
@@ -224,6 +226,7 @@ const I18N = {
     creatingOrder: "রেজরপে অর্ডার তৈরি হচ্ছে...",
     openingGateway: "সুরক্ষিত পেমেন্ট উইন্ডো খুলছে...",
     verifying: "পেমেন্ট যাচাই করা হচ্ছে...",
+    checkAgain: "আবার যাচাই করুন",
     footerNote: "রেজরপে-র নিরাপদ চেকআউট · UPI, কার্ড, নেট ব্যাংকিং ও ওয়ালেট",
     celebratingBadge: "🙏 আন্তরিক ধন্যবাদ · ব্যাংক যাচাইকৃত অনুদান",
     celebratingTitle: "নমস্কার ও আন্তরিক ধন্যবাদ,",
@@ -280,6 +283,7 @@ const I18N = {
     creatingOrder: "Order create ho raha hai...",
     openingGateway: "Razorpay Secure Gateway khul raha hai...",
     verifying: "Bank verification chal raha hai...",
+    checkAgain: "Dobara check karein",
     footerNote: "Razorpay ka secure checkout · UPI, card, net banking aur wallet",
     celebratingBadge: "🙏 Koti-Koti Dhanyavaad · Bank Verified Contribution",
     celebratingTitle: "Namaste & Thank You,",
@@ -335,6 +339,7 @@ const I18N = {
     creatingOrder: "ऑर्डर तयार होत आहे...",
     openingGateway: "गेटवे उघडत आहे...",
     verifying: "बँक पडताळणी सुरू आहे...",
+    checkAgain: "पुन्हा तपासा",
     footerNote: "रेझरपेचे सुरक्षित चेकआउट · UPI, कार्ड, नेट बँकिंग आणि वॉलेट",
     celebratingBadge: "🙏 मनःपूर्वक धन्यवाद · बँक सत्यापित योगदान",
     celebratingTitle: "नमस्ते आणि धन्यवाद,",
@@ -390,6 +395,7 @@ const I18N = {
     creatingOrder: "ஆர்டர் உருவாகிறது...",
     openingGateway: "கேட்வே திறக்கிறது...",
     verifying: "சரிபார்க்கப்படுகிறது...",
+    checkAgain: "மீண்டும் சரிபார்க்கவும்",
     footerNote: "ரேஸர்பே பாதுகாப்பான செக்அவுட் · UPI, கார்டு, நெட் பேங்கிங், வாலட்",
     celebratingBadge: "🙏 மனமார்ந்த நன்றி · வங்கி சரிபார்க்கப்பட்டது",
     celebratingTitle: "வணக்கம் & மனமார்ந்த நன்றி,",
@@ -445,6 +451,7 @@ const I18N = {
     creatingOrder: "ఆర్డర్ తయారవుతోంది...",
     openingGateway: "గేట్‌వే తెరుచుకుంటోంది...",
     verifying: "ధృవీకరించబడుతోంది...",
+    checkAgain: "మళ్ళీ తనిఖీ చేయండి",
     footerNote: "రేజర్‌పే సురక్షిత చెక్‌అవుట్ · UPI, కార్డు, నెట్ బ్యాంకింగ్, వాలెట్",
     celebratingBadge: "🙏 హృదయపూర్వక ధన్యవాదాలు · ధృవీకరించబడింది",
     celebratingTitle: "నమస్కారం & ధన్యవాదాలు,",
@@ -459,27 +466,61 @@ const I18N = {
   },
 };
 
-function loadRazorpaySdk(): Promise<boolean> {
-  if (typeof window === "undefined") return Promise.resolve(false);
-  if (window.Razorpay) return Promise.resolve(true);
+let sdk: Promise<boolean> | null = null;
 
-  return new Promise((resolve) => {
-    const existing = document.getElementById("razorpay-checkout-sdk") as HTMLScriptElement | null;
-    if (existing) {
-      if (window.Razorpay) return resolve(true);
-      existing.addEventListener("load", () => resolve(true), { once: true });
-      existing.addEventListener("error", () => resolve(false), { once: true });
-      return;
-    }
+/** Loads Razorpay's checkout once. A failed try never blocks the next one. */
+function loadRazorpaySdk(): Promise<boolean> {
+  if (window.Razorpay) return Promise.resolve(true);
+  sdk ??= new Promise<boolean>((resolve) => {
     const script = document.createElement("script");
-    script.id = "razorpay-checkout-sdk";
+    const done = (ok: boolean) => {
+      clearTimeout(timer);
+      if (!ok) {
+        script.remove();
+        sdk = null;
+      }
+      resolve(ok);
+    };
+    const timer = setTimeout(() => done(false), 20_000);
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.onload = () => done(Boolean(window.Razorpay));
+    script.onerror = () => done(false);
     document.body.appendChild(script);
   });
+  return sdk;
 }
+
+/** What the bank's window hands back. Kept until the receipt is on screen, so a reload never loses it. */
+type Proof = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  orderToken: string;
+  at: number;
+};
+const PROOF = "rescuen-pay-proof";
+
+function saveProof(p: Proof | null) {
+  try {
+    if (p) localStorage.setItem(PROOF, JSON.stringify(p));
+    else localStorage.removeItem(PROOF);
+  } catch {
+    // private mode: only a reload during confirmation would need it
+  }
+}
+
+function savedProof(): Proof | null {
+  try {
+    const p = JSON.parse(localStorage.getItem(PROOF) || "null") as Proof | null;
+    return p && /^pay_/.test(p.razorpay_payment_id) && Date.now() - p.at < 24 * 60 * 60_000 ? p : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Reasons that may pass by themselves, so asking again makes sense. */
+const PASSING = /^E-(OFFLINE|SLOW|SERVER|RATE|PAY-FETCH|PAY-STATUS|PAY-OFF|5\d\d)$/;
 
 export default function DonationPortal({ compact = false }: { compact?: boolean }) {
   const siteLang = useLang();
@@ -499,6 +540,8 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
   const [statusText, setStatusText] = useState<string>("");
   const [problem, setProblem] = useState<Problem | null>(null);
   const [paymentNote, setPaymentNote] = useState("");
+  const [waiting, setWaiting] = useState<Proof | null>(null);
+  const starting = useRef(false); // one window at a time, however fast the button is tapped
 
   const setError = (message: string | null, code = "E-PAY-FORM") => {
     setProblem(message ? { message, code } : null);
@@ -507,6 +550,20 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
 
   // STRICT RULE: Receipt state is ONLY set when Razorpay server-to-server signature is verified!
   const [receipt, setReceipt] = useState<VerifiedReceipt | null>(null);
+
+  // A payment that was made but not confirmed yet (the page was closed or reloaded) is picked up again.
+  const resumed = useRef(false);
+  useEffect(() => {
+    if (resumed.current) return;
+    resumed.current = true;
+    const proof = savedProof();
+    if (proof) void confirmPayment(proof);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (receipt) document.getElementById("printable-receipt-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [receipt]);
 
   const t = I18N[lang] || I18N.en;
   const Title = compact ? "h3" : "h2";
@@ -561,6 +618,8 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
       return;
     }
 
+    if (starting.current) return;
+    starting.current = true;
     setLoading(true);
     setStatusText(t.creatingOrder);
 
@@ -602,12 +661,15 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
         currency: data.currency || "INR",
         name: "Team RESCUEN",
         description: `Surakshit Bharat Mission Contribution (${formattedAmount})`,
-        image: "/rescuen-logo.png",
+        image: `${window.location.origin}/rescuen-logo.png`,
         order_id: data.order_id,
         prefill: {
           name: name.trim() || undefined,
           email: email.trim() || undefined,
         },
+        remember_customer: false,
+        retry: { enabled: true, max_count: 3 },
+        timeout: 900,
         config: {
           display: {
             blocks: {
@@ -624,20 +686,25 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
           color: "#004aad",
           backdrop_color: "rgba(10, 37, 64, 0.82)",
         },
-        handler: async (response: {
+        handler: (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
           razorpay_signature: string;
         }) => {
-          setStatusText(t.verifying);
-          await verifyPaymentOnServer({
+          const proof: Proof = {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
             orderToken: data.orderToken,
-          });
+            at: Date.now(),
+          };
+          saveProof(proof);
+          void confirmPayment(proof);
         },
         modal: {
+          confirm_close: true,
+          escape: false,
+          backdropclose: false,
           ondismiss: () => {
             setLoading(false);
             setStatusText("");
@@ -670,33 +737,35 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
       setError("Something didn’t work as expected. Please try again.", "E-PAY-START");
       setLoading(false);
       setStatusText("");
+    } finally {
+      starting.current = false;
     }
   }
 
-  async function verifyPaymentOnServer(payload: {
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
-    orderToken: string;
-  }) {
+  async function confirmPayment(proof: Proof) {
     setLoading(true);
     setError(null);
-    const result = await post<{ receipt: VerifiedReceipt }>("/api/verify-payment", {
-      razorpay_order_id: payload.razorpay_order_id,
-      razorpay_payment_id: payload.razorpay_payment_id,
-      razorpay_signature: payload.razorpay_signature,
-      orderToken: payload.orderToken,
-    });
+    setWaiting(null);
+    setStatusText(t.verifying);
+    const { at: _at, ...body } = proof;
+    let result = await post<{ receipt: VerifiedReceipt }>("/api/verify-payment", body);
+    for (let i = 1; i <= 3 && !result.ok && PASSING.test(result.problem.code); i++) {
+      await new Promise((r) => setTimeout(r, 2000 * i));
+      result = await post<{ receipt: VerifiedReceipt }>("/api/verify-payment", body);
+    }
     setLoading(false);
     setStatusText("");
     if (result.ok) {
+      saveProof(null);
       setReceipt(result.data.receipt);
       return;
     }
     // The payment itself may have gone through, so never invite a second one here.
-    setPaymentNote(`Payment ID: ${payload.razorpay_payment_id}`);
+    if (PASSING.test(result.problem.code)) setWaiting(proof);
+    else saveProof(null);
+    setPaymentNote(`Payment ID: ${proof.razorpay_payment_id}`);
     setProblem({
-      message: `${result.problem.message} Please don’t pay again. Keep this ID: ${payload.razorpay_payment_id}`,
+      message: `${result.problem.message} Please don’t pay again. Keep this ID: ${proof.razorpay_payment_id}`,
       code: result.problem.code,
     });
   }
@@ -1295,15 +1364,35 @@ export default function DonationPortal({ compact = false }: { compact?: boolean 
                 {problem && (
                   <ProblemNotice problem={problem} area="Contribution" note={paymentNote} className="mt-4" />
                 )}
+                {waiting && !loading && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => confirmPayment(waiting)} className="btn-ghost flex-1">
+                      <RefreshCw className="h-4 w-4" aria-hidden="true" /> {t.checkAgain}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        saveProof(null);
+                        setWaiting(null);
+                        setError(null);
+                      }}
+                      className="btn px-4 text-xs text-ink-faint hover:text-brand"
+                    >
+                      {t.anotherBtn}
+                    </button>
+                  </div>
+                )}
 
                 {/* Primary Submit CTA — Launches Official Razorpay Modal */}
                 <button
                   type="submit"
-                  disabled={loading || !amount || amount < 1}
+                  onPointerEnter={() => void loadRazorpaySdk()}
+                  onFocus={() => void loadRazorpaySdk()}
+                  disabled={loading || !!waiting || !amount || amount < 1}
                   className="btn-primary mt-6 w-full py-4 text-base font-extrabold shadow-glow disabled:opacity-50"
                 >
                   {loading ? (
-                    t.openingGateway
+                    statusText || t.openingGateway
                   ) : (
                     <>
                       <HeartHandshake className="h-5 w-5" />
