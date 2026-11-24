@@ -1,15 +1,18 @@
 "use client";
 
-// Phone sign-in in the browser. The web config is public by design; nothing
+// Phone and Google sign-in in the browser. The web config is public by design; nothing
 // secret is ever referenced from this file.
 
 import { getApp, getApps, initializeApp, type FirebaseApp } from "@firebase/app";
 import {
   getAuth,
+  GoogleAuthProvider,
   RecaptchaVerifier,
   signInWithPhoneNumber,
+  signInWithPopup,
   type Auth,
   type ConfirmationResult,
+  type UserCredential,
 } from "@firebase/auth";
 
 const config = {
@@ -47,6 +50,18 @@ export async function sendOtp(phone: string, containerId: string): Promise<Confi
     verifier = null;
     throw err;
   }
+}
+
+/** Gets the sign-in window ready, so it opens the moment it is asked for. */
+export function prepareSignIn() {
+  auth();
+}
+
+/** Opens Google's own sign-in window. */
+export function signInWithGoogle(): Promise<UserCredential> {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  return signInWithPopup(auth(), provider);
 }
 
 export type { ConfirmationResult };

@@ -10,19 +10,14 @@ import ProblemNotice from "@/components/feedback/ProblemNotice";
 import type { ConfirmationResult } from "@/lib/firebase.client";
 import { SITE } from "@/lib/site";
 
-const COUNTRIES = [
-  { code: "+91", label: "🇮🇳 +91" },
-  { code: "+1", label: "🇺🇸 +1" },
-  { code: "+44", label: "🇬🇧 +44" },
-  { code: "+971", label: "🇦🇪 +971" },
-  { code: "+61", label: "🇦🇺 +61" },
-];
+// Codes are sent inside India only.
+const CC = "+91";
 
 type Step = "phone" | "otp" | "success";
 
-export default function OTPLogin() {
+export default function OTPLogin({ google = false }: { google?: boolean }) {
   const [step, setStep] = useState<Step>("phone");
-  const [cc, setCc] = useState("+91");
+  const [opening, setOpening] = useState(false);
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [loading, setLoading] = useState(false);
@@ -30,13 +25,18 @@ export default function OTPLogin() {
   const error = !!problem;
   const setError = (message: string, code = "E-AUTH-FORM") => setProblem(message ? { message, code } : null);
   const [resendIn, setResendIn] = useState(0);
-  const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [signedInAs, setSignedInAs] = useState("");
   const [shake, setShake] = useState(false);
 
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const fullNumber = useMemo(() => `${cc}${phone.replace(/\D/g, "")}`, [cc, phone]);
+  const fullNumber = useMemo(() => `${CC}${phone.replace(/\D/g, "")}`, [phone]);
+
+  // Loaded ahead of time: a window may only open right after a tap.
+  useEffect(() => {
+    if (google) void import("@/lib/firebase.client").then((m) => m.prepareSignIn()).catch(() => {});
+  }, [google]);
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -74,8 +74,8 @@ export default function OTPLogin() {
     e?.preventDefault();
     setError("");
     const digits = phone.replace(/\D/g, "");
-    if (digits.length < 7 || digits.length > 14) {
-      setError("Please enter a valid phone number.");
+    if (digits.length !== 10) {
+      setError("Please enter your 10-digit mobile number.");
       return;
     }
     setLoading(true);
@@ -136,7 +136,7 @@ export default function OTPLogin() {
         setProblem(checked.problem);
         return;
       }
-      setVerifiedPhone(fullNumber);
+      setSignedInAs(fullNumber);
       setStep("success");
     } catch (err: unknown) {
       setProblem(friendlyError(err));
@@ -148,10 +148,30 @@ export default function OTPLogin() {
     }
   };
 
+  const withGoogle = async () => {
+    setError("");
+    setOpening(true);
+    try {
+      const { signInWithGoogle } = await import("@/lib/firebase.client");
+      const { user } = await signInWithGoogle();
+      const checked = await post("/api/verify-token", { idToken: await user.getIdToken() });
+      if (!checked.ok) {
+        setProblem(checked.problem);
+        return;
+      }
+      setSignedInAs(user.displayName || user.email || "RESCUEN");
+      setStep("success");
+    } catch (err: unknown) {
+      setProblem(friendlyError(err));
+    } finally {
+      setOpening(false);
+    }
+  };
+
   const mmss = `00:${String(resendIn).padStart(2, "0")}`;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#070b16] px-5 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-clip bg-[#070b16] px-5 py-12">
       {/* Ambient luxury background */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-24 top-10 h-96 w-96 glow [--g:theme(colors.brand.700/40%)]" />
@@ -168,7 +188,7 @@ export default function OTPLogin() {
       </div>
 
       {/* Glassy card */}
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-7 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.8)] backdrop-blur-2xl sm:p-9">
+      <div className="relative z-10 w-full max-w-md overflow-clip rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-7 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.8)] backdrop-blur-2xl sm:p-9">
         {/* warm streak */}
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-56 rotate-12 bg-gold-400/10 blur-2xl" />
 
@@ -195,30 +215,39 @@ export default function OTPLogin() {
                 Enter your phone number — we’ll text you a secure code.
               </p>
 
-              <form onSubmit={startOtp} className="mt-7 space-y-5">
-                <div className="flex gap-2">
-                  <select
-                    aria-label="Country code"
-                    value={cc}
-                    onChange={(e) => setCc(e.target.value)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3.5 text-sm font-semibold text-white outline-none focus:border-gold-400 [&>option]:text-ink"
+              {google && (
+                <>
+                  <button
+                    type="button"
+                    onClick={withGoogle}
+                    disabled={opening}
+                    className="btn mt-7 w-full bg-white text-base text-ink shadow-card hover:bg-mist disabled:opacity-70"
                   >
-                    {COUNTRIES.map((c) => (
-                      <option key={c.code} value={c.code}>{c.label}</option>
-                    ))}
-                  </select>
-                  <div className="relative flex-1">
-                    <input
-                      inputMode="numeric"
-                      autoComplete="tel-national"
-                      aria-label="Phone number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/[^\d\s]/g, ""))}
-                      placeholder="98765 43210"
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-gold-400"
-                      required
-                    />
-                  </div>
+                    {opening ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <GoogleMark />}
+                    Continue with Google
+                  </button>
+                  <p className="mt-6 flex items-center gap-3 text-center text-xs font-semibold text-white/55 before:h-px before:flex-1 before:bg-white/15 after:h-px after:flex-1 after:bg-white/15">
+                    or use your phone number
+                  </p>
+                </>
+              )}
+
+              <form onSubmit={startOtp} className={`${google ? "mt-5" : "mt-7"} space-y-5`}>
+                <div className="flex items-stretch rounded-xl border border-white/10 bg-white/5 focus-within:border-gold-400">
+                  <span className="grid place-items-center border-r border-white/10 px-4 text-sm font-semibold text-white" aria-hidden="true">
+                    {CC}
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    aria-label="Phone number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/[^\d\s]/g, "").slice(0, 12))}
+                    placeholder="98765 43210"
+                    className="w-full min-w-0 flex-1 bg-transparent px-4 py-3.5 text-sm text-white placeholder:text-white/35 outline-none"
+                    required
+                  />
                 </div>
 
                 {problem && <ProblemNotice dark problem={problem} area="Sign in" />}
@@ -328,7 +357,7 @@ export default function OTPLogin() {
               </span>
               <h1 className="mt-6 font-display text-2xl font-extrabold text-white sm:text-3xl">You’re verified</h1>
               <p className="mt-2 text-white/60">
-                Signed in as <b className="text-white">{verifiedPhone}</b>
+                Signed in as <b data-no-translate className="text-white">{signedInAs}</b>
               </p>
               <div className="mt-8 flex flex-col gap-3">
                 <a href={SITE.appStoreUrl} target="_blank" rel="noreferrer" className="btn-gold w-full text-base">
@@ -355,21 +384,40 @@ export default function OTPLogin() {
   );
 }
 
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 48 48" className="h-5 w-5" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.600 0-12-5.400-12-12s5.400-12 12-12c3.100 0 5.800 1.200 8 3l5.700-5.700C34 6 29.300 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.300-.1-2.400-.4-3.500z" />
+      <path fill="#FF3D00" d="m6.300 14.700 6.600 4.800C14.700 15.100 19 12 24 12c3.100 0 5.800 1.200 8 3l5.700-5.700C34 6 29.300 4 24 4 16.300 4 9.700 8.300 6.300 14.700z" />
+      <path fill="#4CAF50" d="M24 44c5.200 0 9.900-2 13.400-5.200l-6.200-5.200C29.200 35.100 26.700 36 24 36c-5.200 0-9.600-3.300-11.300-8l-6.500 5C9.500 39.600 16.200 44 24 44z" />
+      <path fill="#1976D2" d="M43.600 20.500H42V20H24v8h11.300c-.8 2.200-2.200 4.200-4.100 5.600l6.200 5.200C37 39.200 44 34 44 24c0-1.300-.1-2.400-.4-3.500z" />
+    </svg>
+  );
+}
+
+const LATER = "Website sign-in is taking a short break. Your RESCUEN app works as usual.";
+
+/** What a visitor is told, and the short code our team sees in a report. */
+const PROBLEMS: Record<string, [string, string]> = {
+  "auth/invalid-phone-number": ["That phone number doesn’t look right. Please check it and try again.", "E-AUTH-NUMBER"],
+  "auth/missing-phone-number": ["Please enter your phone number.", "E-AUTH-NUMBER"],
+  "auth/too-many-requests": ["You’ve tried a few times. Please wait a little and try again.", "E-AUTH-LIMIT"],
+  "auth/invalid-verification-code": ["That code isn’t right. Please check the SMS and try again.", "E-AUTH-CODE"],
+  "auth/code-expired": ["That code has expired. Please request a new one.", "E-AUTH-EXPIRED"],
+  "auth/network-request-failed": ["You seem to be offline. Please check your connection and try again.", "E-AUTH-NET"],
+  "auth/captcha-check-failed": ["We couldn’t confirm this device. Please refresh the page and try again.", "E-AUTH-CHECK"],
+  "auth/invalid-app-credential": ["We couldn’t confirm this device. Please refresh the page and try again.", "E-AUTH-CHECK"],
+  "auth/popup-closed-by-user": ["The sign-in window was closed. Please try again.", "E-AUTH-CLOSED"],
+  "auth/cancelled-popup-request": ["The sign-in window was closed. Please try again.", "E-AUTH-CLOSED"],
+  "auth/popup-blocked": ["Your browser blocked the sign-in window. Please allow it and try again.", "E-AUTH-POPUP"],
+  "auth/billing-not-enabled": [LATER, "E-AUTH-SMS"],
+  "auth/operation-not-allowed": [LATER, "E-AUTH-SMS"],
+  "auth/quota-exceeded": [LATER, "E-AUTH-SMS"],
+  "auth/unauthorized-domain": [LATER, "E-AUTH-DOMAIN"],
+};
+
 /** Turns any sign-in failure into plain words. Technical details never reach the page. */
 function friendlyError(err: unknown): Problem {
-  const raw = (err as { code?: string })?.code || "";
-  const code = `E-AUTH-${raw.replace(/^auth\//, "").replace(/[^a-z0-9]+/gi, "-").toUpperCase().slice(0, 26) || "OTHER"}`;
-  const words: Record<string, string> = {
-    "auth/invalid-phone-number": "That phone number doesn’t look right. Please check it and try again.",
-    "auth/missing-phone-number": "Please enter your phone number.",
-    "auth/too-many-requests": "You’ve tried a few times. Please wait a little and try again.",
-    "auth/invalid-verification-code": "That code isn’t right. Please check the SMS and try again.",
-    "auth/code-expired": "That code has expired. Please request a new one.",
-    "auth/network-request-failed": "You seem to be offline. Please check your connection and try again.",
-    "auth/captcha-check-failed": "We couldn’t confirm this device. Please refresh the page and try again.",
-  };
-  return {
-    message: words[raw] || "Website sign-in is taking a short break. Your RESCUEN app works as usual.",
-    code,
-  };
+  const [message, code] = PROBLEMS[(err as { code?: string })?.code || ""] || [LATER, "E-AUTH-OTHER"];
+  return { message, code };
 }

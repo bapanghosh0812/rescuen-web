@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import BotAvatar from "@/components/ai/BotAvatar";
 import { onAsk } from "@/components/feedback/bus";
@@ -30,6 +31,8 @@ export default function AssistantLauncher() {
   const [mounted, setMounted] = useState(false);
   const [queue, setQueue] = useState<{ text: string; id: number }[]>([]);
   const nextId = useRef(0);
+  // The greeting never covers a form: people come to these pages to fill one in.
+  const busyPage = /^\/(login|donate)/.test(usePathname() || "");
   const [teaser, setTeaser] = useState(false);
   const [side, setSide] = useState<"right" | "left">("right");
   const drag = useRef({ x: 0, active: false, moved: false });
@@ -67,10 +70,20 @@ export default function AssistantLauncher() {
 
   useEffect(() => {
     if (read("rescuen-side") === "left") setSide("left");
-    if (read("rescuen-teaser")) return;
-    const t = setTimeout(() => setTeaser(true), 7000);
-    return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (busyPage || read("rescuen-teaser")) return;
+    const open = setTimeout(() => setTeaser(true), 7000);
+    const close = setTimeout(() => {
+      setTeaser(false);
+      write("rescuen-teaser", "1");
+    }, 19_000);
+    return () => {
+      clearTimeout(open);
+      clearTimeout(close);
+    };
+  }, [busyPage]);
 
   const closeTeaser = () => {
     setTeaser(false);
@@ -97,8 +110,8 @@ export default function AssistantLauncher() {
   return (
     <>
       {!open && (
-        <div className={`fixed bottom-4 z-[60] flex flex-col gap-3 sm:bottom-6 ${edge} ${side === "right" ? "items-end" : "items-start"}`}>
-          {teaser && (
+        <div className={`bot-dock fixed bottom-4 z-[60] flex flex-col gap-3 sm:bottom-6 ${edge} ${side === "right" ? "items-end" : "items-start"}`}>
+          {teaser && !busyPage && (
             <div className="bot-teaser relative max-w-[250px] rounded-2xl border border-line bg-white/95 py-3 pl-4 pr-10 shadow-lift backdrop-blur-xl">
               <button type="button" onClick={() => show()} className="text-left text-[13px] leading-snug text-ink-soft">
                 <b className="text-ink">Namaste!</b> I’m RESCUEN AI. Ask me anything about staying safe.

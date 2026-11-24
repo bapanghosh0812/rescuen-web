@@ -344,6 +344,21 @@
   .bot-input {
     field-sizing: content;
   }
+  /* If the host shows its badge in this corner, sit above it */
+  :root:has(#nl-badge-frame) .bot-dock.items-end {
+    margin-bottom: 52px;
+  }
+  @media (max-width: 639px) {
+    :root:has(#nl-badge-frame) .bot-panel {
+      padding-bottom: 64px;
+    }
+  }
+  @media (min-width: 640px) {
+    :root:has(#nl-badge-frame) .bot-panel {
+      bottom: 76px;
+      height: min(680px, calc(100dvh - 10rem));
+    }
+  }
   .bot-avatar {
     display: block;
     flex: none;
@@ -559,6 +574,9 @@ main :is(.btn, .btn-primary, .btn-ghost, .btn-gold, .btn-sos, .btn-dark):is(:lan
   }
   h1:is(.h-display, .text-4xl):is(:lang(ta), :lang(te)) {
     font-size: min(1.9rem, 8vw);
+  }
+  h1.text-2xl:is(:lang(ta), :lang(te)) {
+    font-size: min(1.3rem, 5.6vw);
   }
   h2.text-3xl:is(:lang(ta), :lang(te)) {
     font-size: min(1.55rem, 7vw);

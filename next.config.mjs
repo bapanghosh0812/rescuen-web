@@ -69,13 +69,15 @@ export default function config(phase) {
     async redirects() {
       const home = (process.env.NEXT_PUBLIC_SITE_URL || "https://rescuen-web.netlify.app").replace(/\/+$/, "");
       return [
-        // One address for search engines: the older copy points here.
-        {
-          source: "/:path*",
-          has: [{ type: "host", value: "rescuen-web.vercel.app" }],
-          destination: `${home}/:path*`,
-          permanent: true,
-        },
+        // One address for search engines: every other copy points here.
+        ...["rescuen-web.vercel.app", "rescuen-web-2.netlify.app", "rescuen-web.netlify.app"]
+          .filter((host) => host !== new URL(home).host)
+          .map((host) => ({
+            source: "/:path*",
+            has: [{ type: "host", value: host }],
+            destination: `${home}/:path*`,
+            permanent: true,
+          })),
         ...legal.map((d) => ({ source: `/${d}`, destination: `/legal/${d}`, permanent: true })),
         { source: "/promo/:name(promo-[1-6]).png", destination: "/promo/:name.webp", permanent: true },
         { source: "/namaste-illustration.svg", destination: "/daan/namaste-mail.jpg", permanent: true },

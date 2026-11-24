@@ -175,12 +175,32 @@ export type IssueReport = {
 };
 
 /** Delivers a visitor's problem report to the support inbox. */
+/** What each problem code means, so a report can be acted on straight away. */
+const MEANING: Record<string, string> = {
+  "E-AUTH-SMS": "SMS codes are off in Firebase (rescuen-web): the Blaze plan is off, or India is not allowed.",
+  "E-AUTH-DOMAIN": "This address is missing from Firebase > Authentication > Settings > Authorized domains.",
+  "E-AUTH-CHECK": "The robot check did not finish on the visitor's device.",
+  "E-AUTH-LIMIT": "Too many sign-in tries from this number or device.",
+  "E-AUTH-OTHER": "Sign-in failed for another reason. Check Firebase > Authentication.",
+  "E-TOKEN": "The sign-in could not be confirmed. Check the Firebase project ID in the site settings.",
+  "E-AI-REST": "The AI service is out of credit or busy. Visitors got the built-in answers instead.",
+  "E-MAIL": "Gmail did not accept the message. Check the app password.",
+  "E-REPORT": "Gmail did not accept the report. Check the app password.",
+  "E-PAY-OFF": "The Razorpay keys are missing from the site settings.",
+  "E-PAY-ORDER": "Razorpay refused to start a payment. Check the keys and the account status.",
+  "E-PAY-FETCH": "Razorpay could not be reached to confirm a payment.",
+  "E-PAY-SIGN": "A payment signature did not match. Check the key secret; if it is right, someone may be tampering.",
+  "E-PAY-TOKEN": "A payment came back too late, or with changed details.",
+  "E-PAY-STATUS": "The bank has not confirmed this payment.",
+};
+
 export async function sendIssueReport(r: IssueReport): Promise<boolean> {
   const transport = getTransport();
   if (!transport) return false;
   const rows: [string, string][] = [
     ["Reference", r.ref],
     ["Problem code", r.code || "none"],
+    ...(MEANING[r.code] ? ([["Meaning", MEANING[r.code]]] as [string, string][]) : []),
     ["Area", r.area || "not given"],
     ["Page", r.page || "not given"],
     ["Reply to", r.email || "not given"],
